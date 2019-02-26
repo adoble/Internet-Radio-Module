@@ -10,6 +10,8 @@
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2S.h"
 
+#include "ToggleButton.h"
+
 // WIFI credentials
 #include "credentials.h"
 
@@ -17,6 +19,9 @@
 
 // RPR1 URL
 const char *URL="http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";
+
+const int muteButtonPin = 4;
+ToggleButton muteButton(muteButtonPin);
 
 AudioGeneratorMP3 *mp3;
 AudioFileSourceHTTPStream *file;
@@ -54,6 +59,9 @@ void StatusCallback(void *cbData, int code, const char *string)
 
 void setup()
 {
+  // Set up mute button pin
+  pinMode(muteButtonPin, INPUT_PULLUP);
+
   Serial.begin(115200);
   delay(1000);
   Serial.println("Connecting to WiFi");
@@ -88,6 +96,23 @@ void setup()
 
 void loop()
 {
+  continueMP3();
+
+  if (muteButton.sense() == HIGH) {
+    continueMP3();
+    out->SetGain(0);
+    continueMP3();
+  } else {
+    continueMP3();
+    out->SetGain(0.125);
+    continueMP3();
+  }
+}
+
+
+
+void continueMP3()
+{
   static int lastms = 0;
 
   if (mp3->isRunning()) {
@@ -101,4 +126,8 @@ void loop()
     Serial.printf("MP3 done\n");
     delay(1000);
   }
+
 }
+
+
+void stopPlaying() {}

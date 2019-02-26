@@ -1,0 +1,3 @@
+PushButton	KEYWORD1
+ToggleButton KEYWORD1
+sense KEYWORD2
