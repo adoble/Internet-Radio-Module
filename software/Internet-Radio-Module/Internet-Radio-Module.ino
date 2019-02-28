@@ -10,23 +10,34 @@
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2S.h"
 
-#include "ToggleButton.h"
+#include "PushButton.h"
 
 // WIFI credentials
 #include "credentials.h"
 
 // To run, set your ESP8266 build to 160MHz, update the SSID info, and upload.
 
+// Stations
+const int NUMBER_STATIONS = 3;
+char *stationURLs[NUMBER_STATIONS] = {
+      "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3", // RPR1
+      "http://streams.rpr1.de/rpr-80er-128-mp3", // RPR1 Best of the 80s - 128kbs
+      "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3" // SWR3 - 128kps
+      };
+int currentStation = 0;
 // RPR1 URL
-const char *URL="http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";
+//const char *stationURL="http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";
 
-const int muteButtonPin = 4;
-ToggleButton muteButton(muteButtonPin);
+const int stationButtonPin = 4;
+PushButton stationButton(stationButtonPin);
+boolean stationButtonPressed = false;
+
+// Default volume
+const long volume = 0.2;
 
 AudioGeneratorMP3 *mp3;
 AudioFileSourceHTTPStream *file;
 AudioFileSourceBuffer *buff;
-//AudioOutputI2SNoDAC *out;
 AudioOutputI2S *out;
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
@@ -42,6 +53,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
   s2[sizeof(s2)-1]=0;
   Serial.printf("METADATA(%s) '%s' = '%s'\n", ptr, s1, s2);
   Serial.flush();
+ 
 }
 
 // Called when there's a warning or error (like a buffer underflow or decode hiccup)
@@ -54,13 +66,14 @@ void StatusCallback(void *cbData, int code, const char *string)
   s1[sizeof(s1)-1]=0;
   Serial.printf("STATUS(%s) '%d' = '%s'\n", ptr, code, s1);
   Serial.flush();
+
 }
 
 
 void setup()
 {
   // Set up mute button pin
-  pinMode(muteButtonPin, INPUT_PULLUP);
+  pinMode(stationButtonPin, INPUT_PULLUP);
 
   Serial.begin(115200);
   delay(1000);
@@ -79,33 +92,24 @@ void setup()
   }
   Serial.println("Connected");
 
-  file = new AudioFileSourceHTTPStream(URL);
-  file->RegisterMetadataCB(MDCallback, (void*)"ICY");
-  //buff = new AudioFileSourceBuffer(file, 2048);
-  buff = new AudioFileSourceBuffer(file, 16384);
-  buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
-  //out = new AudioOutputI2SNoDAC();
-  //out = new AudioOutputI2S(0, 1); // INTERNAL_DAC
-  out = new AudioOutputI2S(); // EXTERNAL DAC
-  out->SetGain(0.125);
-  mp3 = new AudioGeneratorMP3();
-  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
-  mp3->begin(buff, out);
+  tuneIntoStation(stationURLs[currentStation]);
 }
 
 
 void loop()
 {
-  continueMP3();
+  continueMP3(); 
 
-  if (muteButton.sense() == HIGH) {
-    continueMP3();
-    out->SetGain(0);
-    continueMP3();
-  } else {
-    continueMP3();
-    out->SetGain(0.125);
-    continueMP3();
+  if (stationButton.sense() == HIGH) stationButtonPressed = true;
+
+  continueMP3();
+  
+  if (stationButtonPressed && (stationButton.sense() == LOW)) {
+    // Change on releasing the button
+    stationButtonPressed = false;
+    currentStation++;
+    if (currentStation >= NUMBER_STATIONS) currentStation = 0;
+    tuneIntoStation(stationURLs[currentStation]);
   }
 }
 
@@ -130,4 +134,46 @@ void continueMP3()
 }
 
 
-void stopPlaying() {}
+void stopPlaying()
+{
+  if (mp3) {
+    mp3->stop();
+    delete mp3;
+    mp3 = NULL;
+  }
+  if (buff) {
+    buff->close();
+    delete buff;
+    buff = NULL;
+  }
+  if (file) {
+    file->close();
+    delete file;
+    file = NULL;
+  }
+}
+
+void tuneIntoStation(char *stationURL)
+{
+  stopPlaying();
+
+  Serial.print("Station: ");
+  Serial.println(stationURL);
+
+  file = new AudioFileSourceHTTPStream(stationURL);
+  file->RegisterMetadataCB(MDCallback, (void*)"ICY");
+  //buff = new AudioFileSourceBuffer(file, 2048);
+  //buff = new AudioFileSourceBuffer(file, 16384);
+  buff = new AudioFileSourceBuffer(file, 32768);
+  
+  buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
+  out = new AudioOutputI2S(); // EXTERNAL DAC
+  out->SetGain(0.2);
+  mp3 = new AudioGeneratorMP3();
+  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
+  mp3->begin(buff, out);
+
+  Serial.print("Tuned into: ");
+  Serial.println(stationURL);
+
+}
