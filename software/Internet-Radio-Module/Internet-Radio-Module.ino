@@ -35,6 +35,7 @@ boolean stationButtonPressed = false;
 // Default volume
 const long volume = 0.2;
 
+// The main "components" of the radio
 AudioGeneratorMP3 *mp3;
 AudioFileSourceHTTPStream *file;
 AudioFileSourceBuffer *buff;
@@ -53,7 +54,7 @@ void MDCallback(void *cbData, const char *type, bool isUnicode, const char *stri
   s2[sizeof(s2)-1]=0;
   Serial.printf("METADATA(%s) '%s' = '%s'\n", ptr, s1, s2);
   Serial.flush();
- 
+
 }
 
 // Called when there's a warning or error (like a buffer underflow or decode hiccup)
@@ -66,7 +67,6 @@ void StatusCallback(void *cbData, int code, const char *string)
   s1[sizeof(s1)-1]=0;
   Serial.printf("STATUS(%s) '%d' = '%s'\n", ptr, code, s1);
   Serial.flush();
-
 }
 
 
@@ -98,12 +98,12 @@ void setup()
 
 void loop()
 {
-  continueMP3(); 
+  continueMP3();
 
   if (stationButton.sense() == HIGH) stationButtonPressed = true;
 
   continueMP3();
-  
+
   if (stationButtonPressed && (stationButton.sense() == LOW)) {
     // Change on releasing the button
     stationButtonPressed = false;
@@ -165,7 +165,7 @@ void tuneIntoStation(char *stationURL)
   //buff = new AudioFileSourceBuffer(file, 2048);
   //buff = new AudioFileSourceBuffer(file, 16384);
   buff = new AudioFileSourceBuffer(file, 32768);
-  
+
   buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
   out = new AudioOutputI2S(); // EXTERNAL DAC
   out->SetGain(0.2);
