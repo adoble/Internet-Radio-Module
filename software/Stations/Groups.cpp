@@ -107,7 +107,7 @@ void Groups::setup(char data[], int  dataLength) {
 				state = GROUP;
 
 			}
-			if (*(p + i) == '\n') {
+			if (*(p + i) == '\n' || *(p + i) == '\r' ) {
 				*(p + i) = '\0';   // Terminate group name string
 				pGroup = addGroup(pGroupName); // pGroup is a pointer to the group that
 				// has been added or previously set up.
