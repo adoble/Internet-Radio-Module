@@ -1,5 +1,5 @@
-RPR1,http://streams.rpr1.de/rpr-kaiserslautern-128-mp3,Favorites
-RPR1 Best of the 80s,http://streams.rpr1.de/rpr-80er-128-mp3,Favorites
+RPR1,http://streams.rpr1.de/rpr-kaiserslautern-128-mp3,Favorites,German
+RPR1 Best of the 80s,http://streams.rpr1.de/rpr-80er-128-mp3,Favorites,German
 SW3,https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3,Favorites
 BBC Radio 1,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p,UK
 BBC Radio 2,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio2_mf_p,UK
