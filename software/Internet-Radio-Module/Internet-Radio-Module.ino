@@ -10,7 +10,8 @@
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2S.h"
 
-#include "PushButton.h"
+#include <LiquidCrystal.h>
+#include "PushButtonClicks.h"  
 
 // WIFI credentials
 #include "credentials.h"
@@ -28,19 +29,24 @@ int currentStation = 0;
 // RPR1 URL
 //const char *stationURL="http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";
 
-const int stationButtonPin = 4;
-PushButton stationButton(stationButtonPin);
-boolean stationButtonPressed = false;
-
 // Default volume
 const long volume = 0.2;
-
 
 // The main "components" of the radio
 AudioGeneratorMP3 *mp3;
 AudioFileSourceHTTPStream *file;
 AudioFileSourceBuffer *buff;
 AudioOutputI2S *out;
+
+// WIRING
+// Initialize the LCD library by associating any needed LCD interface pins
+// with the microcontroller pin number it is connected to
+const int rs = 2, en = 15, d4 = 5, d5 = 18, d6 = 23, d7 = 19;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+// The control push button
+PushButton controlButton;
+const int controlButtonPin = 4;
 
 // Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
 void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
@@ -73,12 +79,19 @@ void StatusCallback(void *cbData, int code, const char *string)
 
 void setup()
 {
-  // Set up mute button pin
-  pinMode(stationButtonPin, INPUT_PULLUP);
+  // Set up the LCD with the  number of columns and rows
+    lcd.begin(16, 2);
+  
+  // Set up contrl button
+  pinMode(controlButtonPin, INPUT_PULLUP);
 
   Serial.begin(115200);
   delay(1000);
-  Serial.println("Connecting to WiFi");
+  
+  Serial.println("Connecting WiFi");
+  lcd.clear();
+  lcd.home();
+  lcd.print("WiFi Connecting");
 
   WiFi.disconnect();
   WiFi.softAPdisconnect(true);
@@ -92,6 +105,9 @@ void setup()
     delay(1000);
   }
   Serial.println("Connected");
+  lcd.clear();
+  lcd.home();
+  lcd.print("WiFI Connected");
 
   tuneIntoStation(stationURLs[currentStation]);
 }
@@ -101,17 +117,7 @@ void loop()
 {
   continueMP3();
 
-  if (stationButton.sense() == HIGH) stationButtonPressed = true;
-
-  continueMP3();
-
-  if (stationButtonPressed && (stationButton.sense() == LOW)) {
-    // Change on releasing the button
-    stationButtonPressed = false;
-    currentStation++;
-    if (currentStation >= NUMBER_STATIONS) currentStation = 0;
-    tuneIntoStation(stationURLs[currentStation]);
-  }
+ 
 }
 
 
@@ -164,8 +170,8 @@ void tuneIntoStation(char *stationURL)
   file = new AudioFileSourceHTTPStream(stationURL);
   file->RegisterMetadataCB(MDCallback, (void*)"ICY");
   //buff = new AudioFileSourceBuffer(file, 2048);
-  //buff = new AudioFileSourceBuffer(file, 16384);
-  buff = new AudioFileSourceBuffer(file, 32768);
+  buff = new AudioFileSourceBuffer(file, 16384);
+  //buff = new AudioFileSourceBuffer(file, 32768);
 
   buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
   out = new AudioOutputI2S(); // EXTERNAL DAC
@@ -174,7 +180,12 @@ void tuneIntoStation(char *stationURL)
   mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
   mp3->begin(buff, out);
 
-  Serial.print("Tuned into: ");
-  Serial.println(stationURL);
+  if (mp3->isRunning()) {
+    Serial.print("Tuned into: ");
+    Serial.println(stationURL);
+  } else {
+    Serial.println("Cannot connect to URL");
+  }
 
+  
 }
