@@ -29,6 +29,7 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:maker
+LIBS:Switch
 LIBS:internet-radio-module-cache
 EELAYER 25 0
 EELAYER END
