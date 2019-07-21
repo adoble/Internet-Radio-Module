@@ -1,4 +1,4 @@
-update=19/07/2019 17:03:20
+update=21/07/2019 14:03:47
 version=1
 last_client=kicad
 [pcbnew]
@@ -60,3 +60,4 @@ LibName28=contrib
 LibName29=valves
 LibName30=library/maker
 LibName31=Switch
+LibName32=library/SparkFun-Boards
