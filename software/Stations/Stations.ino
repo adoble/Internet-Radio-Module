@@ -38,25 +38,25 @@ Station* currentStation;
 
 // initialize the LCD library by associating any needed LCD interface pins
 // with the microcontroller pin number it is connected to
-const int rs = 2, en = 15, d4 = 5, d5 = 18, d6 = 23, d7 = 19;
+const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 long blinkTime = 0;
 long currentTime = 0;
 boolean blankDisplay = true;
-  
+
 
 // The control push button
 PushButton controlButton;
-const int controlButtonPin = 4;
+const int controlButtonPin = 14;
 
 // The system states
 enum State {INITIAL, STATION_SELECT, GROUP_SELECT} state;
 
-void initializeGroupStructure(); 
+void initializeGroupStructure();
 void readStationConfiguration();
 
 void setup() {
-    String msg; 
+    String msg;
 
     state = STATION_SELECT;;
 
@@ -64,7 +64,7 @@ void setup() {
 
     // Set up the control button
     pinMode(controlButtonPin, INPUT_PULLUP);
-    
+
     // set up the LCD with the  number of columns and rows
     lcd.begin(16, 2);
 
@@ -74,7 +74,7 @@ void setup() {
 
     Serial.println();
 
-    
+
     msg = "Connect to WIFI";
     lcd.print(msg);
     for(uint8_t t = 4; t > 0; t--) {
@@ -100,9 +100,9 @@ void setup() {
 
 void loop() {
 
-  
+
     switch(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin))) {
-      case 0 : //Serial.println("Nothing or Bounce"); 
+      case 0 : //Serial.println("Nothing or Bounce");
                break;
       case 1 : // Pressed and not released for a long time
                // Blick the group name and clear the station (second) line
@@ -120,11 +120,11 @@ void loop() {
                  }
                  lcd.print(currentStation->getName());
                }
-               
+
                break;
-              
+
       case 2 : Serial.println("Pressed and released after a long time"); break;
-      case 3 : Serial.println("A click"); 
+      case 3 : Serial.println("A click");
                if (state == GROUP_SELECT) {
                 currentGroup = groups->next();
                 if (currentGroup == NULL) {  // Cycle through the groups
@@ -158,7 +158,7 @@ void loop() {
    switch (state) {
     case INITIAL: //DO NOTHING  TODO Simplify code
                 break;
-    case STATION_SELECT: 
+    case STATION_SELECT:
                 // Make sure the stations are shown
 //                lcd.setCursor(0,0);
 //                lcd.print(currentGroup->getName());
@@ -166,7 +166,7 @@ void loop() {
 //                lcd.print(currentStation->getName());
 //                state = INITIAL;
                 break;
-    case GROUP_SELECT:   
+    case GROUP_SELECT:
                 lcd.setCursor(0,1);
                 lcd.print("                "); // Clear the station details
                 currentTime = millis();
@@ -181,13 +181,13 @@ void loop() {
                     lcd.setCursor(0,0);
                     if (currentGroup == NULL) Serial.println("PANIC HERE");
                     lcd.print(currentGroup->getName());
-                    blankDisplay = true; 
+                    blankDisplay = true;
                   }
                 }
                 break;
      default: Serial.println("UNKNOWN STATE");
    }
-       
+
 }
 
 void initializeGroupStructure() {
@@ -225,14 +225,14 @@ void readStationConfiguration() {
           payload.pDataBuffer = new char[payload.length];
           //payloadString.toCharArray(payload.pDataBuffer, maxPayloadLength);
           payloadString.toCharArray(payload.pDataBuffer, payload.length);
- 
+
           groups->setup(payload.pDataBuffer, payload.length);
 
           groups->begin();
         	Group* group;
             while ((group = groups->next()) != NULL) {
-            	Serial.println(group->getName()); 
-             
+            	Serial.println(group->getName());
+
             	group->begin();
             	Station* station;
             	while ((station = group->next()) != NULL) {
@@ -241,7 +241,7 @@ void readStationConfiguration() {
                 Serial.print(",");
                 Serial.print(station->getURL());
                 Serial.println();
-               
+
             	}
             }
 
@@ -250,7 +250,7 @@ void readStationConfiguration() {
       groups->begin();
       currentGroup = groups->next();
       if (currentGroup == NULL)  Serial.println("PANIC B");
-      
+
       lcd.clear();
       lcd.print(currentGroup->getName());
       currentGroup->begin();
