@@ -1,4 +1,4 @@
-update=21/07/2019 14:03:47
+update=26/07/2019 18:25:20
 version=1
 last_client=kicad
 [pcbnew]
@@ -61,3 +61,13 @@ LibName29=valves
 LibName30=library/maker
 LibName31=Switch
 LibName32=library/SparkFun-Boards
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=60

@@ -31,7 +31,6 @@ LIBS:valves
 LIBS:maker
 LIBS:Switch
 LIBS:SparkFun-Boards
-LIBS:adafruit
 LIBS:internet-radio-module-cache
 EELAYER 25 0
 EELAYER END
@@ -292,4 +291,26 @@ Wire Notes Line
 	2900 6800 1950 6800
 Wire Notes Line
 	1950 6800 1950 6150
+Text Notes 1050 1150 0    60   ~ 0
+1
+Text Notes 1800 1150 0    60   ~ 0
+16
+Wire Notes Line
+	1000 1050 2300 1050
+Wire Notes Line
+	1000 1050 1000 1400
+Wire Notes Line
+	1000 1400 2300 1400
+Wire Notes Line
+	2300 1400 2300 1050
+Wire Notes Line
+	1150 1200 1150 1350
+Wire Notes Line
+	1150 1350 2150 1350
+Wire Notes Line
+	2150 1350 2150 1200
+Wire Notes Line
+	2150 1200 1150 1200
+Text Notes 1050 1500 0    60   ~ 0
+Pin Layout LCD / Top View
 $EndSCHEMATC
