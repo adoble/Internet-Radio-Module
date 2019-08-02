@@ -88,7 +88,6 @@ void setup() {
       lcd.setCursor(0, 1);
       //Serial.println(msg);
       lcd.print(t);
-      //Serial.flush();
       delay(1000);
     }
 
@@ -112,7 +111,7 @@ void loop() {
 
 
     switch(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin))) {
-      case 0 : //Serial.println("Nothing or Bounce");
+      case 0 : //Nothing or Bounce
                break;
       case 1 : // Pressed and not released for a long time
                // Blick the group name and clear the station (second) line
@@ -205,8 +204,6 @@ void loop() {
      if ((millis() - scrollTime) > SCROLLTIME) {  // SCROLLTIME = 150?
 
        tickerTape(tickerTapeStep, currentStation->getName(), strlen(currentStation->getName()), displayBuffer, DISPLAY_BUFFER_LEN, SPACING);
-       Serial.print("STEP:");Serial.println(tickerTapeStep);
-       Serial.print("DISPLAY BUFFER:");Serial.println(displayBuffer);
        lcd.setCursor(0,1);
        lcd.print(displayBuffer);
        tickerTapeStep++;
@@ -296,27 +293,19 @@ void readStationConfiguration() {
 
 // Step < length of display
 void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int displayLength, int spacing) {
-  Serial.print("TEXT:");Serial.println(text);
   int pos;
-
-    Serial.print("displayLength:");Serial.println(displayLength);
-
 
   for (int i=0; i< displayLength; i++) {
     pos = rollStep + i;
     if (pos >= 0 && pos < textLen) {
       
         displayBuffer[i] = text[pos];
-        Serial.print("1TEXT[[");Serial.print(pos); Serial.print("]]="); Serial.println(text[pos]);
     }
     if (pos >= textLen && pos < (textLen + spacing)) {
         displayBuffer[i] = ' ';
-        Serial.print("2TEXT[[");Serial.print(pos); Serial.print("]]="); Serial.println(" ");
     }
     if (pos >= (textLen + spacing)) {
         displayBuffer[i] = text[pos%(textLen + spacing)];
-        Serial.print("3TEXT[[");Serial.print(pos%(textLen + spacing)); Serial.print("]]="); Serial.println(text[pos%(textLen + spacing)]);
-        
     }
     // Make sure the string terminator is in place
     displayBuffer[DISPLAY_BUFFER_LEN] = '\0';
