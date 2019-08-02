@@ -52,6 +52,15 @@ const int controlButtonPin = 14;
 // The system states
 enum State {INITIAL, STATION_SELECT, GROUP_SELECT} state;
 
+// The display bufer used for scolling text tciker tape style
+const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
+const int SPACING = 2; // Number charectors used to seperate strings in
+                       // a ticker tape style diplay
+const int SCROLLTIME = 350; // ms
+int scrollTime;
+char displayBuffer[DISPLAY_BUFFER_LEN + 1];
+int tickerTapeStep = 0;
+
 void initializeGroupStructure();
 void readStationConfiguration();
 
@@ -68,9 +77,7 @@ void setup() {
     // set up the LCD with the  number of columns and rows
     lcd.begin(16, 2);
 
-    currentTime = blinkTime = millis();
 
-    blinkTime = millis();
 
     Serial.println();
 
@@ -95,6 +102,9 @@ void setup() {
        readStationConfiguration();
 
     }
+
+    // Set all timing variables to now
+    scrollTime = currentTime = blinkTime = millis();
 
 }
 
@@ -147,6 +157,7 @@ void loop() {
                 lcd.print(currentGroup->getName());
                 lcd.setCursor(0,1);
                 lcd.print(currentStation->getName());
+                tickerTapeStep = 0;
                }
                break;
       case 4 : Serial.println("Double click"); break;
@@ -186,6 +197,23 @@ void loop() {
                 }
                 break;
      default: Serial.println("UNKNOWN STATE");
+   }
+
+   // Now check if the station length is longer than 16
+   if (strlen(currentStation->getName()) > 16 && state != GROUP_SELECT) {
+     // Is it time to scroll
+     if ((millis() - scrollTime) > SCROLLTIME) {  // SCROLLTIME = 150?
+
+       tickerTape(tickerTapeStep, currentStation->getName(), strlen(currentStation->getName()), displayBuffer, DISPLAY_BUFFER_LEN, SPACING);
+       Serial.print("STEP:");Serial.println(tickerTapeStep);
+       Serial.print("DISPLAY BUFFER:");Serial.println(displayBuffer);
+       lcd.setCursor(0,1);
+       lcd.print(displayBuffer);
+       tickerTapeStep++;
+       if (tickerTapeStep == (DISPLAY_BUFFER_LEN + SPACING - 1)) tickerTapeStep = 0;
+       scrollTime = millis();
+     }
+
    }
 
 }
@@ -266,15 +294,32 @@ void readStationConfiguration() {
   http.end();
 }
 
-/*void parseStationLine(String line) {
-  int startIndex = 0;
-  int index = line.indexOf(SEPERATOR);
+// Step < length of display
+void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int displayLength, int spacing) {
+  Serial.print("TEXT:");Serial.println(text);
+  int pos;
+
+    Serial.print("displayLength:");Serial.println(displayLength);
 
 
-
-  Station* sp =  addStation(
-  while (index > -1) {
-    index = line.indexOf(
+  for (int i=0; i< displayLength; i++) {
+    pos = rollStep + i;
+    if (pos >= 0 && pos < textLen) {
+      
+        displayBuffer[i] = text[pos];
+        Serial.print("1TEXT[[");Serial.print(pos); Serial.print("]]="); Serial.println(text[pos]);
+    }
+    if (pos >= textLen && pos < (textLen + spacing)) {
+        displayBuffer[i] = ' ';
+        Serial.print("2TEXT[[");Serial.print(pos); Serial.print("]]="); Serial.println(" ");
+    }
+    if (pos >= (textLen + spacing)) {
+        displayBuffer[i] = text[pos%(textLen + spacing)];
+        Serial.print("3TEXT[[");Serial.print(pos%(textLen + spacing)); Serial.print("]]="); Serial.println(text[pos%(textLen + spacing)]);
+        
+    }
+    // Make sure the string terminator is in place
+    displayBuffer[DISPLAY_BUFFER_LEN] = '\0';
   }
 
-}*/
+}
