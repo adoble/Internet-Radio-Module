@@ -24,6 +24,7 @@
 *                     This is used to buffer the data to that sproadic gaps in the internet connection
 *                     are "smoothed out".
 * Lemon_VS1053      - A local library to control the VS1053
+* LiquidCrytal
 *
 */
 
@@ -32,6 +33,7 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
+#include <LiquidCrystal.h>
 
 #include <SPI.h>
 #include "Lemon_VS1053.h"
@@ -57,6 +59,11 @@ Lemon_VS1053 player = Lemon_VS1053(XRST, XCS, XDCS, DREQ);
 
 // Set up the external RAM as a ring buffer
 SPIRingBuffer ringBuffer(RAMCS);
+
+// initialize the LCD library by associating any needed LCD interface pins
+// with the microcontroller pin number it is connected to
+const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 // Flag to ensure that the ring buffer is fully loaded on startup
 bool bufferInitialized = false;
@@ -129,6 +136,9 @@ void setup() {
 //         delay(1000);
 //     }
 
+  // set up the LCD with the  number of columns and rows
+  lcd.begin(16, 2);
+
   // Before initialising using the libraries  make sure that the CS pins are
   // in the right state
   pinMode(XCS, OUTPUT);
@@ -160,6 +170,12 @@ void setup() {
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Connecting to");
+    lcd.setCursor(0, 1);
+    lcd.print("WiFi");
+
 
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
     // wait for WiFi connection

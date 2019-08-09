@@ -187,7 +187,6 @@ unsigned char SPIRingBuffer::readByte(uint32_t address)
   //unsigned char res;
   unsigned char res;
 
-
   //SPI.beginTransaction(RAM_SPI_SETTING);
 
   // Set byte mode
@@ -224,7 +223,6 @@ void SPIRingBuffer::writeByte(uint32_t address, char data)
 
   // Set byte mode
   setMode(BYTE_MODE);
-
 
   //Serial.print("Write MSB: 0x"); Serial.print((uint8_t)(address >> 8), HEX);
   //Serial.print(" LSB: 0x"); Serial.println((uint8_t)(address), HEX);
