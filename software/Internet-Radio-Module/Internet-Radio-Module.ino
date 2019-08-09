@@ -1,180 +1,405 @@
+/**
+* Internet Radio
+*
+*  This sketch:
+*    - connects (WPA encryption)to an internet radio site using an ESP32 module
+}    - reads the mp3 data stream
+*    - buffers the data in an external SPI controlled RAM
+*    - transfers it to the VS1053 so that it can decode
+*      the mp3 data into an audio signal.
+*
+*
+* Standard Libraries
+* ==================
+* Arduino           - Standard Arduino library
+* SPI               - Serial Progamming Interface standard library
+* WiFi              - Standard Arduino  WiFi library
+* WiFiMulti         - Standard library for connecting to multiple access points
+* HTTPClient        - Standard library for HTTP processing .
+*
+* Created Libaries (for the project)
+* ==================================
+* SPIRingBuffer     - A ring buffer that is implemented to use an SPI based
+}                     23LV1024 RAM.
+*                     This is used to buffer the data to that sproadic gaps in the internet connection
+*                     are "smoothed out".
+* Lemon_VS1053      - A local library to control the VS1053
+*
+*/
+
 #include <Arduino.h>
 
-#ifdef ESP32
-    #include <WiFi.h>
-#else
-    #include <ESP8266WiFi.h>
-#endif
-#include "AudioFileSourceHTTPStream.h"
-#include "AudioFileSourceBuffer.h"
-#include "AudioGeneratorMP3.h"
-#include "AudioOutputI2S.h"
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
 
-#include "PushButton.h"
-
-// WIFI credentials
+#include <SPI.h>
+#include "Lemon_VS1053.h"
+#include "SPIRingBuffer.h"
 #include "credentials.h"
 
-// To run, set your ESP8266 build to 160MHz, update the SSID info, and upload.
+const char programName[] = "Internet-Radio-Module";
 
-// Stations
-const int NUMBER_STATIONS = 3;
-char *stationURLs[NUMBER_STATIONS] = {
-      "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3", // RPR1
-      "http://streams.rpr1.de/rpr-80er-128-mp3", // RPR1 Best of the 80s - 128kbs
-      "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3" // SWR3 - 128kps
-      };
-int currentStation = 0;
-// RPR1 URL
-//const char *stationURL="http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";
+#define USE_SERIAL Serial
 
-const int stationButtonPin = 4;
-PushButton stationButton(stationButtonPin);
-boolean stationButtonPressed = false;
+// Pin setup for the VS1053
+const int DREQ = 26;
+const int XCS = 25;
+const int XRST = 35; //NOTE: The reset jumper on the
+                     // Adafruit Feather MusicMaker w/Amp needs to be broken
+const int XDCS = 27;
 
-// Default volume
-const long volume = 0.2;
+// Pin setup for the 23LC1024 RAM
+const int RAMCS = 22;     // Chip select for the external RAM used for the ring buffer
 
+// Setup the VS1053 Lemom player using standard hardware SPI pins
+Lemon_VS1053 player = Lemon_VS1053(XRST, XCS, XDCS, DREQ);
 
-// The main "components" of the radio
-AudioGeneratorMP3 *mp3;
-AudioFileSourceHTTPStream *file;
-AudioFileSourceBuffer *buff;
-AudioOutputI2S *out;
+// Set up the external RAM as a ring buffer
+SPIRingBuffer ringBuffer(RAMCS);
 
-// Called when a metadata event occurs (i.e. an ID3 tag, an ICY block, etc.
-void MDCallback(void *cbData, const char *type, bool isUnicode, const char *string)
-{
-  const char *ptr = reinterpret_cast<const char *>(cbData);
-  (void) isUnicode; // Punt this ball for now
-  // Note that the type and string may be in PROGMEM, so copy them to RAM for printf
-  char s1[32], s2[64];
-  strncpy_P(s1, type, sizeof(s1));
-  s1[sizeof(s1)-1]=0;
-  strncpy_P(s2, string, sizeof(s2));
-  s2[sizeof(s2)-1]=0;
-  Serial.printf("METADATA(%s) '%s' = '%s'\n", ptr, s1, s2);
-  Serial.flush();
+// Flag to ensure that the ring buffer is fully loaded on startup
+bool bufferInitialized = false;
 
-}
+// The threshold at which the buffer will be faster loaded.
+const int THRESHOLD = ringBuffer.RING_BUFFER_LENGTH / 5;   // 20%
 
-// Called when there's a warning or error (like a buffer underflow or decode hiccup)
-void StatusCallback(void *cbData, int code, const char *string)
-{
-  const char *ptr = reinterpret_cast<const char *>(cbData);
-  // Note that the string may be in PROGMEM, so copy it to RAM for printf
-  char s1[64];
-  strncpy_P(s1, string, sizeof(s1));
-  s1[sizeof(s1)-1]=0;
-  Serial.printf("STATUS(%s) '%d' = '%s'\n", ptr, code, s1);
-  Serial.flush();
-}
+// The skip flag to allow the buffer to catch up
+int skip = 0;
+
+volatile int checkControlStatus = 0;
+
+// Setup the WIFI objects
+WiFiMulti WiFiMulti;
+HTTPClient http;
+
+// WiFi configuration using the defines in credentials.h
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PWD;
+
+// Web page to access
+String station= "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";   // RPR1   128kps
+//String station= "http://217.151.151.90:80/rpr-80er-128-mp3";   // RPR1   128kps
+//String station= "http://rpr1.fmstreams.de/rpr-80er-128-mp3";   // RPR1 Best of the 80s - 128kbs
+//String station= "http://swr-mp3-m-swr3.akacast.akamaistream.net/7/720/137136/v1/gnl.akacast.akamaistream.net/swr-mp3-m-swr3";   // SWR3 - 128kbs
 
 
-void setup()
-{
-  // Set up mute button pin
-  pinMode(stationButtonPin, INPUT_PULLUP);
+// Create a buffer for to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
+// is the amount that can be transfered to the VS1053 in one SPI operation.
+const int DATABUFFERLEN = 32;
+uint8_t mp3Buffer[DATABUFFERLEN];
+int bufferIndex = 0;
 
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("Connecting to WiFi");
+// The url of the station currently playing
+String currentStation;
 
-  WiFi.disconnect();
-  WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_STA);
+// number of byte availble in the read stream
+size_t nBytes;
 
-  WiFi.begin(WIFI_SSID, WIFI_PWD);
+// Pointer to  the payload stream, i.e. the MP3 data from the internet station.
+WiFiClient * stream;
 
-  // Try forever
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("...Connecting to WiFi");
-    delay(1000);
-  }
-  Serial.println("Connected");
-
-  tuneIntoStation(stationURLs[currentStation]);
-}
+// Default setting for the tone control
+int toneControl = 0;
 
 
-void loop()
-{
-  continueMP3();
+// Function prototypes
+void handleRedirect();
+void handleOtherCode(int);
+String getStationURL();
 
-  if (stationButton.sense() == HIGH) stationButtonPressed = true;
+//void inline handler (void){
+//  checkControlStatus = 1;
+//  timer0_write(ESP.getCycleCount() + 41660000);
+//}
 
-  continueMP3();
+void setup() {
 
-  if (stationButtonPressed && (stationButton.sense() == LOW)) {
-    // Change on releasing the button
-    stationButtonPressed = false;
-    currentStation++;
-    if (currentStation >= NUMBER_STATIONS) currentStation = 0;
-    tuneIntoStation(stationURLs[currentStation]);
-  }
-}
+    USE_SERIAL.begin(115200);
+    delay(10);
+    //USE_SERIAL.setDebugOutput(true);  //!!!!!
 
+    // So we know what version we are running
+    USE_SERIAL.println(programName);
+    USE_SERIAL.println();
 
+//     for(uint8_t t = 4; t > 0; t--) {
+//         USE_SERIAL.printf("[SETUP] WAIT %d...\n", t);
+//         USE_SERIAL.flush();
+//         delay(1000);
+//     }
 
-void continueMP3()
-{
-  static int lastms = 0;
+  // Before initialising using the libraries  make sure that the CS pins are
+  // in the right state
+  pinMode(XCS, OUTPUT);
+  digitalWrite(XCS, HIGH);
+  pinMode(XDCS, OUTPUT);
+  digitalWrite(XDCS, HIGH);
+  pinMode(RAMCS, OUTPUT);
+  digitalWrite(RAMCS, HIGH);
+  delay(1);
 
-  if (mp3->isRunning()) {
-    if (millis()-lastms > 1000) {
-      lastms = millis();
-      Serial.printf("Running for %d ms...\n", lastms);
-      Serial.flush();
-     }
-    if (!mp3->loop()) mp3->stop();
-  } else {
-    Serial.printf("MP3 done\n");
-    delay(1000);
+  // Initialise the ring buffer
+  ringBuffer.begin();
+
+  // Initialize the player
+  if ( !player.begin()) { // initialise the player
+     USE_SERIAL.println("Error in player init!");
+     player.dumpRegs();
   }
 
+
+    // Make sure the VS1053 is in MP3 mode. For some this is not the case.
+    while (!player.readyForData()) {}
+    player.setMP3Mode();
+
+    // Set the volume
+    while (!player.readyForData()) {}
+    player.setVolume(40,40);  // Higher is quieter.
+    player.dumpRegs();
+
+    // Connect to the WIFI access point
+    Serial.println("Attempting to connect to WIFI AP");
+
+    WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
+    // wait for WiFi connection
+    const int MAX_CONNECTION_ATTEMPTS = 50;
+    int nAttempts = 0;
+    while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
+      //USE_SERIAL.print(".");
+      delay(50);
+      nAttempts++;
+
+    }
+    USE_SERIAL.println();
+    if (nAttempts >= MAX_CONNECTION_ATTEMPTS) {
+       USE_SERIAL.print("FAILED to connect to WIFI AP after ");
+       USE_SERIAL.print(MAX_CONNECTION_ATTEMPTS);
+       USE_SERIAL.println(" attempts!");
+    } else {
+       USE_SERIAL.print("Connected to WIFI AP");
+    }
+
+
+      // Get the station
+      currentStation =  getStationURL();
+
+      USE_SERIAL.print("[HTTP] begin connection to ");
+      USE_SERIAL.print(currentStation);
+      USE_SERIAL.println(" ...");
+
+
+      // Configure server and url
+      http.begin(currentStation);
+
+
+      USE_SERIAL.print("[HTTP] GET...\n");
+      // start connection and send HTTP header
+      int httpCode = http.GET();
+      if(httpCode > 0) {
+          // HTTP header has been send and Server response header has been handled
+          USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
+
+          // file found at server
+          switch (httpCode) {
+            case HTTP_CODE_OK:
+              // get tcp stream of payload
+              stream = http.getStreamPtr();
+              break;
+            case HTTP_CODE_TEMPORARY_REDIRECT:
+               handleRedirect();
+               break;
+            case HTTP_CODE_PERMANENT_REDIRECT:
+               handleRedirect();
+               break;
+            default:
+              // HTTP cde retuned that cannot be handled
+              handleOtherCode(httpCode);
+              break;
+
+          } // switch httpCode
+      }
+      else {
+          // TODO replace this with the general error handling
+          USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+      }
+  //}  // --- wifi connected
+
+}
+
+void loop() {
+  int nRead = 0;
+  int maxBytesToRead;
+
+
+
+  if (!bufferInitialized) {
+    // Load up the buffer
+    nBytes = stream->available();
+    if (nBytes) {
+      // read in chunks of up to 32 bytes
+
+      //    availableSpace()       nBytes         ->    maxBytesToRead
+      //    =================   =================     ===============
+      //      >=DATABUFFERLEN   >DATABUFFERLEN         DATABUFFERLEN
+      //      >=DATABUFFERLEN   <=DATABUFFERLEN        nBytes
+      //      <DATABUFFERLEN          -               availableSpace
+
+      if (ringBuffer.availableSpace() < DATABUFFERLEN) maxBytesToRead = ringBuffer.availableSpace();
+      else maxBytesToRead = (nBytes> DATABUFFERLEN ? DATABUFFERLEN : nBytes);
+      nRead = stream->readBytes(mp3Buffer, maxBytesToRead);
+      // Transfer to buffer
+      for (int i = 0; i < nRead; i++) {
+        ringBuffer.put(mp3Buffer[i]);
+      }
+      if (ringBuffer.availableSpace() == 0)  {
+          bufferInitialized = true;
+          USE_SERIAL.println("Buffer initialised");
+      }
+    }
+
+  }   // -- if bufferInitialized
+
+  // Adding data to buffer
+  // is ring buffer full?
+  //    no:   is source data available?
+  //            yes: read source, data --> ring buffer
+  //            no:  no-op
+  //    yes: no-op
+  //
+  if (bufferInitialized) {
+    if (ringBuffer.availableSpace() > DATABUFFERLEN) {
+      nBytes = stream->available();
+      if (nBytes) {
+        // read up to 32 bytes
+        nRead = stream->readBytes(mp3Buffer, (nBytes> DATABUFFERLEN ? DATABUFFERLEN : nBytes));
+        // Transfer to buffer
+        for (int i = 0; i < nRead; i++) {
+          ringBuffer.put(mp3Buffer[i]);
+        }
+      }
+    }
+  }
+
+  // Test of the tone control
+//  if (bufferInitialized && checkControlStatus == 1) {
+//    checkControlStatus = 0;
+//    if (toneControl == -15) toneControl = 15;
+//    else toneControl = toneControl -1;
+//    //USE_SERIAL.println(toneControl);
+//    player.setTone(toneControl);
+//  }
+
+
+  // Skip a transfer to the VS1053 to give the buffer a chance to reload if
+  // has the data amout has fallen below THRESHOLD
+  skip = ((bufferInitialized && (ringBuffer.availableData() < THRESHOLD)) ? (skip++)%2 : 0);
+
+  // Moving data to VS1053
+  // does VS1053 accept data? and not skip?
+  //    yes: does ring buffer have data?
+  //           yes: ring buffer data --> VS1053
+  //           no:  no-op
+  //    no:  no-op
+
+  if (bufferInitialized  && !skip) {
+      // Transfer to VS1053
+      if (player.readyForData()) {
+        nRead = (ringBuffer.availableData() > DATABUFFERLEN ? DATABUFFERLEN : ringBuffer.availableData());
+        for (int i= 0; i < nRead; i++) {
+          mp3Buffer[i] = ringBuffer.get();
+        }
+        player.playData(mp3Buffer, nRead);
+      }
+
+  }
+
+    //    http.end();  // TODO Where?
+
+
 }
 
 
-void stopPlaying()
+
+/*
+ *  Handles HTTP redirects
+ *  As there are currently difficulties in finding a site that has redriects
+ *  this function has NOT BEEN TESTED
+ */
+void handleRedirect() {
+    String newSite;
+    // TODO
+    USE_SERIAL.println("REDIRECT!");
+
+    if (http.hasHeader("Location")) {
+      newSite = http.header("Location");
+    }
+
+    http.begin(newSite);
+
+    // start connection and send HTTP header
+    int httpCode = http.GET();
+
+    if(httpCode > 0) {
+        // file found at server
+        switch (httpCode) {
+          case HTTP_CODE_OK:
+            // TODO Add this code
+            break;
+          case HTTP_CODE_FOUND:
+            // TODO add this code
+            break;
+          default:
+            // HTTP cde retuned that cannot be handled
+            handleOtherCode(httpCode);
+            break;
+        }
+    }
+    else {
+      // TODO replace this with the general error handling
+      USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+
+
+}
+
+/*
+ *  Handles other HTTP codes
+ *
+ */
+void handleOtherCode(int httpCode) {
+  // TODO as part of the general error handling
+  USE_SERIAL.print("Cannot handle this HTTP code:");
+  USE_SERIAL.println(httpCode);
+
+}
+
+/* Read the URL of the station that the readi is currently tuned into
+ *
+ * NOTE: This is a dummy function to be replaced with a an SPI read of the station URL.
+ */
+String getStationURL()
 {
-  if (mp3) {
-    mp3->stop();
-    delete mp3;
-    mp3 = NULL;
-  }
-  if (buff) {
-    buff->close();
-    delete buff;
-    buff = NULL;
-  }
-  if (file) {
-    file->close();
-    delete file;
-    file = NULL;
-  }
-}
-
-void tuneIntoStation(char *stationURL)
-{
-  stopPlaying();
-
-  Serial.print("Station: ");
-  Serial.println(stationURL);
-
-  file = new AudioFileSourceHTTPStream(stationURL);
-  file->RegisterMetadataCB(MDCallback, (void*)"ICY");
-  //buff = new AudioFileSourceBuffer(file, 2048);
-  //buff = new AudioFileSourceBuffer(file, 16384);
-  buff = new AudioFileSourceBuffer(file, 32768);
-
-  buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
-  out = new AudioOutputI2S(); // EXTERNAL DAC
-  out->SetGain(0.2);
-  mp3 = new AudioGeneratorMP3();
-  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
-  mp3->begin(buff, out);
-
-  Serial.print("Tuned into: ");
-  Serial.println(stationURL);
+   return station;
 
 }
+
+
+
+// Set the VS1053 chip into MP3 mode
+//void set_mp3_mode()
+//{
+//
+//   while (!player.readyForData());
+//
+//   player.sciWrite(VS1053_REG_WRAMADDR, 0xc017);
+//   player.sciWrite(VS1053_REG_WRAM, 0x0003);
+//
+//   player.sciWrite(VS1053_REG_WRAMADDR, 0xc019);
+//   player.sciWrite(VS1053_REG_WRAM, 0x0000);
+//   delay(100);
+//   player.softReset();
+//
+//   delay(100);
+//
+//}
