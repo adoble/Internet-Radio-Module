@@ -86,6 +86,7 @@ const char* password = WIFI_PWD;
 
 // Web page to access
 String station= "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";   // RPR1   128kps
+String stationName = "RPR1";
 //String station= "http://217.151.151.90:80/rpr-80er-128-mp3";   // RPR1   128kps
 //String station= "http://rpr1.fmstreams.de/rpr-80er-128-mp3";   // RPR1 Best of the 80s - 128kbs
 //String station= "http://swr-mp3-m-swr3.akacast.akamaistream.net/7/720/137136/v1/gnl.akacast.akamaistream.net/swr-mp3-m-swr3";   // SWR3 - 128kbs
@@ -170,11 +171,8 @@ void setup() {
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Connecting to");
-    lcd.setCursor(0, 1);
-    lcd.print("WiFi");
+    printLCD("Connecting to", "WiFi");
+
 
 
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
@@ -192,8 +190,10 @@ void setup() {
        USE_SERIAL.print("FAILED to connect to WIFI AP after ");
        USE_SERIAL.print(MAX_CONNECTION_ATTEMPTS);
        USE_SERIAL.println(" attempts!");
+       printLCD("FAILED to", "connect to WiFi");
     } else {
        USE_SERIAL.print("Connected to WIFI AP");
+       printLCD("Connected to", "WiFi");
     }
 
 
@@ -210,6 +210,7 @@ void setup() {
 
 
       USE_SERIAL.print("[HTTP] GET...\n");
+      printLCD("Connecting to", stationName);
       // start connection and send HTTP header
       int httpCode = http.GET();
       if(httpCode > 0) {
@@ -247,8 +248,6 @@ void loop() {
   int nRead = 0;
   int maxBytesToRead;
 
-
-
   if (!bufferInitialized) {
     // Load up the buffer
     nBytes = stream->available();
@@ -271,6 +270,7 @@ void loop() {
       if (ringBuffer.availableSpace() == 0)  {
           bufferInitialized = true;
           USE_SERIAL.println("Buffer initialised");
+          
       }
     }
 
@@ -419,3 +419,12 @@ String getStationURL()
 //   delay(100);
 //
 //}
+
+void printLCD(String line1, String line2) {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(line1);
+  lcd.setCursor(0,1);
+  lcd.print(line2);
+  
+}
