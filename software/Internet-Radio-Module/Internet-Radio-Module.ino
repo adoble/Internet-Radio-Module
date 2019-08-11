@@ -166,7 +166,7 @@ void setup() {
 
     // Set the volume
     while (!player.readyForData()) {}
-    player.setVolume(40,40);  // Higher is quieter.
+    player.setVolume(30,30);  // Higher is quieter.
     player.dumpRegs();
 
     // Connect to the WIFI access point

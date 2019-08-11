@@ -15,7 +15,10 @@
 SPIRingBuffer::SPIRingBuffer(uint8_t chipSelectPin)
 {
   csPin = chipSelectPin;
-  operationMode = 0xFF;   // TODO need it?
+
+  spiRAM = new ESP8266Spiram(chipSelectPin, RAMCLK);
+
+
 
 }
 
@@ -33,8 +36,8 @@ SPIRingBuffer::SPIRingBuffer(uint8_t chipSelectPin)
    //SCLK = 18, MISO = 19, MOSI = 23, SS = 5
    SPI.begin();
 
-   // reset the indexes.
-   //reset();
+   // Start the SPI RAM in byte mode (default;
+   spiRAM->begin();
  }
 
  /**
@@ -154,26 +157,6 @@ int32_t SPIRingBuffer::getTail(void)
 }
 
 /**
- * Set operation mode
- *
- * @param mode Operation mode
- * TODO need it?
- */
-void SPIRingBuffer::setMode(char mode)
-{
-  if (mode != operationMode)
-  {
-    //SPI.beginTransaction(RAM_SPI_SETTING);
-    chipSelect(true);
-    SPI.transfer(WRSR);
-    SPI.transfer(mode);
-    chipSelect(false);
-    //SPI.endTransaction();
-    operationMode = mode;
-  }
-}
-
-/**
  * Read byte from SRAM
  *
  * @param address Memory address
@@ -182,31 +165,11 @@ void SPIRingBuffer::setMode(char mode)
  */
 //unsigned char SPIRingBuffer::readByte(unsigned int address)
 unsigned char SPIRingBuffer::readByte(uint32_t address)
-
 {
   //unsigned char res;
   unsigned char res;
 
-  //SPI.beginTransaction(RAM_SPI_SETTING);
-
-  // Set byte mode
-  setMode(BYTE_MODE);
-
-  // Write address, read data
-  chipSelect(true);
-  SPI.transfer(READ);
-  SPI.transfer((unsigned char)(address >> 16));
-  SPI.transfer((unsigned char)(address >> 8));
-  SPI.transfer((unsigned char)address);
-
-  res = SPI.transfer(0xFF);
-
-  // TODO DEBUG
-  //Serial.print("Just read: 0x"); Serial.print(res, HEX);Serial.print(" from 0x"); Serial.println(address, HEX);
-
-  chipSelect(false);
-
-  //SPI.endTransaction();
+  spiRAM->read(address, &res, 1);
 
   return res;
 }
@@ -217,29 +180,7 @@ unsigned char SPIRingBuffer::readByte(uint32_t address)
  * @param address Memory address
  * @param data Data byte to be written
  */
-void SPIRingBuffer::writeByte(uint32_t address, char data)
+void SPIRingBuffer::writeByte(uint32_t address, uint8_t data)
 {
-  //SPI.beginTransaction(RAM_SPI_SETTING);
-
-  // Set byte mode
-  setMode(BYTE_MODE);
-
-  //Serial.print("Write MSB: 0x"); Serial.print((uint8_t)(address >> 8), HEX);
-  //Serial.print(" LSB: 0x"); Serial.println((uint8_t)(address), HEX);
-
-  // Write address, read data
-  chipSelect(true);
-  SPI.transfer(WRITE);
-  SPI.transfer((unsigned char)(address >> 16));
-  SPI.transfer((unsigned char)(address >> 8));
-  SPI.transfer((unsigned char)address);
-
-  SPI.transfer(data);
-
-  // TODO remove debug statements
-  //Serial.print("Just wrote: 0x");Serial.println(data, HEX);Serial.print(" to 0x"); Serial.println(address, HEX);
-
-  chipSelect(false);
-
-  //SPI.endTransaction();
+  spiRAM->write(address, &data, 1);
 }

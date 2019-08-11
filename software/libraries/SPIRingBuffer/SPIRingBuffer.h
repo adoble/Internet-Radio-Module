@@ -14,6 +14,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include "ESP8266Spiram.h"
 
 
 // SRAM instructions
@@ -25,8 +26,13 @@
 // SRAM byte mode
 #define BYTE_MODE (0x00)
 
- // Clock speed 16 MHz
- #define RAMCLK 16000000
+// Clock speed 16 MHz
+//#define RAMCLK 16000000
+
+// Clock speed 20 MHz - Max speed of the 24LC1024
+#define RAMCLK 20000000
+
+
 
  // SPI setting for the RAM chip
  #define RAM_SPI_SETTING SPISettings(RAMCLK,  MSBFIRST, SPI_MODE0)
@@ -38,8 +44,8 @@ class SPIRingBuffer
     // Chip select pin
     uint8_t csPin;
 
-    // Operation mode
-    unsigned char operationMode;
+    // The driver for the SPI RAM
+    ESP8266Spiram* spiRAM;
 
     // Head address where the last data was added or -1 of no data added
     int32_t head = -1;
@@ -56,12 +62,7 @@ class SPIRingBuffer
        digitalWrite(csPin, !state);
      }
 
-    /**
-     * Set operation mode
-     *
-     * @param mode Operation mode
-     */
-    void setMode(char mode);
+
   public:
 
     // The length of the ring buffer (in bytes) is the size of the SPI RAM, i.e. 1Mbit = 128KByte
@@ -148,7 +149,7 @@ class SPIRingBuffer
      * param address The memory address
      * param data Data byte to be written
      */
-    void writeByte(uint32_t address, char data);
+    void writeByte(uint32_t address, uint8_t data);
 };
 
 #endif
