@@ -38,6 +38,7 @@
 #include <SPI.h>
 #include "Lemon_VS1053.h"
 #include "SPIRingBuffer.h"
+#include "Station.h"
 #include "credentials.h"
 
 const char programName[] = "Internet-Radio-Module";
@@ -85,21 +86,22 @@ const char* ssid     = WIFI_SSID;
 const char* password = WIFI_PWD;
 
 // Web page to access
-String station= "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";   // RPR1   128kps
-String stationName = "RPR1";
+//String station= "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";   // RPR1   128kps
+//String stationName = "RPR1";
 //String station= "http://217.151.151.90:80/rpr-80er-128-mp3";   // RPR1   128kps
-//String station= "http://rpr1.fmstreams.de/rpr-80er-128-mp3";   // RPR1 Best of the 80s - 128kbs
-//String station= "http://swr-mp3-m-swr3.akacast.akamaistream.net/7/720/137136/v1/gnl.akacast.akamaistream.net/swr-mp3-m-swr3";   // SWR3 - 128kbs
+//String station= "http://streams.rpr1.de/rpr-80er-128-mp3";   // RPR1 Best of the 80s - 128kbs
+//String stationName = "RPR1 80s";
+//String station= "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"; // SWR3 - 128kbs
 
+Station* stations[3];
+// The index of the station currently playing
+int currentStation;
 
 // Create a buffer for to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
 // is the amount that can be transfered to the VS1053 in one SPI operation.
 const int DATABUFFERLEN = 32;
 uint8_t mp3Buffer[DATABUFFERLEN];
 int bufferIndex = 0;
-
-// The url of the station currently playing
-String currentStation;
 
 // number of byte availble in the read stream
 size_t nBytes;
@@ -114,7 +116,7 @@ int toneControl = 0;
 // Function prototypes
 void handleRedirect();
 void handleOtherCode(int);
-String getStationURL();
+void loadStations();
 
 //void inline handler (void){
 //  checkControlStatus = 1;
@@ -137,6 +139,8 @@ void setup() {
 //         delay(1000);
 //     }
 
+
+
   // set up the LCD with the  number of columns and rows
   lcd.begin(16, 2);
 
@@ -149,6 +153,18 @@ void setup() {
   pinMode(RAMCS, OUTPUT);
   digitalWrite(RAMCS, HIGH);
   delay(1);
+
+  // Load  the stations
+  Serial.println("Loading stations");
+  Serial.flush();
+  loadStations(); 
+  for (int i=0; i< 3; i++) {
+    Serial.print(stations[i]->getName()); 
+    Serial.print(" ");
+    Serial.println(stations[i]->getURL()); 
+  }
+  Serial.println("Stations loaded");
+   
 
   // Initialise the ring buffer
   ringBuffer.begin();
@@ -198,19 +214,18 @@ void setup() {
 
 
       // Get the station
-      currentStation =  getStationURL();
+      currentStation =  0;
 
       USE_SERIAL.print("[HTTP] begin connection to ");
-      USE_SERIAL.print(currentStation);
+      USE_SERIAL.print(stations[currentStation]->getName());
       USE_SERIAL.println(" ...");
 
 
       // Configure server and url
-      http.begin(currentStation);
-
-
+      http.begin(stations[currentStation]->getURL());
+      
       USE_SERIAL.print("[HTTP] GET...\n");
-      printLCD("Connecting to", stationName);
+      printLCD("Connecting to", stations[currentStation]->getName());
       // start connection and send HTTP header
       int httpCode = http.GET();
       if(httpCode > 0) {
@@ -270,7 +285,7 @@ void loop() {
       if (ringBuffer.availableSpace() == 0)  {
           bufferInitialized = true;
           USE_SERIAL.println("Buffer initialised");
-          
+
       }
     }
 
@@ -390,18 +405,6 @@ void handleOtherCode(int httpCode) {
 
 }
 
-/* Read the URL of the station that the readi is currently tuned into
- *
- * NOTE: This is a dummy function to be replaced with a an SPI read of the station URL.
- */
-String getStationURL()
-{
-   return station;
-
-}
-
-
-
 // Set the VS1053 chip into MP3 mode
 //void set_mp3_mode()
 //{
@@ -420,11 +423,20 @@ String getStationURL()
 //
 //}
 
+void loadStations() {
+ 
+  stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
+  stations[1] = new Station("RPR1 Best of the 80s", "http://217.151.151.90:80/rpr-80er-128-mp3");
+  stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
+ }
+
 void printLCD(String line1, String line2) {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(line1);
   lcd.setCursor(0,1);
   lcd.print(line2);
-  
+
 }
+
+
