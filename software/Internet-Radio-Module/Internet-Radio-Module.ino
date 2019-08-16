@@ -38,6 +38,7 @@
 #include <SPI.h>
 #include "Lemon_VS1053.h"
 #include "SPIRingBuffer.h"
+#include "PushButtonClicks.h"
 #include "Station.h"
 #include "credentials.h"
 
@@ -65,6 +66,10 @@ SPIRingBuffer ringBuffer(RAMCS);
 // with the microcontroller pin number it is connected to
 const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+// The control push button used to change the stations
+PushButton controlButton;
+const int controlButtonPin = 14;
 
 // Flag to ensure that the ring buffer is fully loaded on startup
 bool bufferInitialized = false;
@@ -117,6 +122,7 @@ int toneControl = 0;
 void handleRedirect();
 void handleOtherCode(int);
 void loadStations();
+void setStation(int);
 
 //void inline handler (void){
 //  checkControlStatus = 1;
@@ -139,7 +145,8 @@ void setup() {
 //         delay(1000);
 //     }
 
-
+  // Set up the control button to change te stations
+  pinMode(controlButtonPin, INPUT_PULLUP);
 
   // set up the LCD with the  number of columns and rows
   lcd.begin(16, 2);
@@ -157,14 +164,14 @@ void setup() {
   // Load  the stations
   Serial.println("Loading stations");
   Serial.flush();
-  loadStations(); 
+  loadStations();
   for (int i=0; i< 3; i++) {
-    Serial.print(stations[i]->getName()); 
+    Serial.print(stations[i]->getName());
     Serial.print(" ");
-    Serial.println(stations[i]->getURL()); 
+    Serial.println(stations[i]->getURL());
   }
   Serial.println("Stations loaded");
-   
+
 
   // Initialise the ring buffer
   ringBuffer.begin();
@@ -182,7 +189,7 @@ void setup() {
 
     // Set the volume
     while (!player.readyForData()) {}
-    player.setVolume(30,30);  // Higher is quieter.
+    player.setVolume(25,25);  // Higher is quieter.
     player.dumpRegs();
 
     // Connect to the WIFI access point
@@ -212,49 +219,9 @@ void setup() {
        printLCD("Connected to", "WiFi");
     }
 
+    // Set the station
+    setStation(1);
 
-      // Get the station
-      currentStation =  0;
-
-      USE_SERIAL.print("[HTTP] begin connection to ");
-      USE_SERIAL.print(stations[currentStation]->getName());
-      USE_SERIAL.println(" ...");
-
-
-      // Configure server and url
-      http.begin(stations[currentStation]->getURL());
-      
-      USE_SERIAL.print("[HTTP] GET...\n");
-      printLCD("Connecting to", stations[currentStation]->getName());
-      // start connection and send HTTP header
-      int httpCode = http.GET();
-      if(httpCode > 0) {
-          // HTTP header has been send and Server response header has been handled
-          USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
-
-          // file found at server
-          switch (httpCode) {
-            case HTTP_CODE_OK:
-              // get tcp stream of payload
-              stream = http.getStreamPtr();
-              break;
-            case HTTP_CODE_TEMPORARY_REDIRECT:
-               handleRedirect();
-               break;
-            case HTTP_CODE_PERMANENT_REDIRECT:
-               handleRedirect();
-               break;
-            default:
-              // HTTP cde retuned that cannot be handled
-              handleOtherCode(httpCode);
-              break;
-
-          } // switch httpCode
-      }
-      else {
-          // TODO replace this with the general error handling
-          USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-      }
   //}  // --- wifi connected
 
 }
@@ -262,6 +229,18 @@ void setup() {
 void loop() {
   int nRead = 0;
   int maxBytesToRead;
+
+  // See if we have to change the station
+  if(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin)) == 3 ) {  //  Control button clicked
+    // change station
+    currentStation++;
+    if (currentStation > 2) currentStation = 0;
+    setStation(currentStation);
+    // Reinitialise the  buffer
+    bufferInitialized = false;
+    ringBuffer.begin();
+  }
+
 
   if (!bufferInitialized) {
     // Load up the buffer
@@ -394,6 +373,56 @@ void handleRedirect() {
 
 }
 
+/* Set the station.
+*/
+void setStation(int stationId) {
+
+  // Disconnect if already connected
+  if (http.connected()) {
+    http.end();
+    USE_SERIAL.println("[HTTP] disconnect");
+  }
+
+  USE_SERIAL.print("[HTTP] begin connection to ");
+  USE_SERIAL.print(stations[stationId]->getName());
+  USE_SERIAL.println(" ...");
+
+
+  // Configure server and url
+  http.begin(stations[stationId]->getURL());
+
+  USE_SERIAL.print("[HTTP] GET...\n");
+  printLCD("Connecting to", stations[stationId]->getName());
+  // start connection and send HTTP header
+  int httpCode = http.GET();
+  if(httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+      USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
+
+      // file found at server
+      switch (httpCode) {
+        case HTTP_CODE_OK:
+          // get tcp stream of payload
+          stream = http.getStreamPtr();
+          break;
+        case HTTP_CODE_TEMPORARY_REDIRECT:
+           handleRedirect();
+           break;
+        case HTTP_CODE_PERMANENT_REDIRECT:
+           handleRedirect();
+           break;
+        default:
+          // HTTP cde retuned that cannot be handled
+          handleOtherCode(httpCode);
+          break;
+
+      } // switch httpCode
+  }
+  else {
+      // TODO replace this with the general error handling
+      USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+}
 /*
  *  Handles other HTTP codes
  *
@@ -424,9 +453,9 @@ void handleOtherCode(int httpCode) {
 //}
 
 void loadStations() {
- 
+
   stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
-  stations[1] = new Station("RPR1 Best of the 80s", "http://217.151.151.90:80/rpr-80er-128-mp3");
+  stations[1] = new Station("RPR1 Best of the 80s", "http://streams.rpr1.de/rpr-80er-128-mp3");
   stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
  }
 
@@ -438,5 +467,3 @@ void printLCD(String line1, String line2) {
   lcd.print(line2);
 
 }
-
-
