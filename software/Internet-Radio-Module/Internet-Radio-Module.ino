@@ -20,11 +20,13 @@
 * Created Libaries (for the project)
 * ==================================
 * SPIRingBuffer     - A ring buffer that is implemented to use an SPI based
-}                     23LV1024 RAM.
-*                     This is used to buffer the data to that sproadic gaps in the internet connection
-*                     are "smoothed out".
+*                     23LC1024 RAM. This is used to buffer the data to that
+*                     sporadic gaps in the internet connection are
+*                     "smoothed out".
+* ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
+*                     Handles basic communication with the memory chip.
 * Lemon_VS1053      - A local library to control the VS1053
-* LiquidCrytal
+* LiquidCrytal      - Controls the LCD display.
 *
 */
 
@@ -44,13 +46,11 @@
 
 const char programName[] = "Internet-Radio-Module";
 
-#define USE_SERIAL Serial
-
 // Pin setup for the VS1053
 const int DREQ = 26;
-const int XCS = 25;
-const int XRST = 35; //NOTE: The reset jumper on the
-                     // Adafruit Feather MusicMaker w/Amp needs to be broken
+const int XCS  = 25;
+const int XRST = 35;  //NOTE: The reset jumper on the
+                      // Adafruit Feather MusicMaker w/Amp needs to be broken
 const int XDCS = 27;
 
 // Pin setup for the 23LC1024 RAM
@@ -102,7 +102,7 @@ Station* stations[3];
 // The index of the station currently playing
 int currentStation;
 
-// Create a buffer for to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
+// Create a buffer  to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
 // is the amount that can be transfered to the VS1053 in one SPI operation.
 const int DATABUFFERLEN = 32;
 uint8_t mp3Buffer[DATABUFFERLEN];
@@ -124,26 +124,15 @@ void handleOtherCode(int);
 void loadStations();
 void setStation(int);
 
-//void inline handler (void){
-//  checkControlStatus = 1;
-//  timer0_write(ESP.getCycleCount() + 41660000);
-//}
 
 void setup() {
 
-    USE_SERIAL.begin(115200);
-    delay(10);
-    //USE_SERIAL.setDebugOutput(true);  //!!!!!
+  Serial.begin(115200);
+  delay(10);
 
-    // So we know what version we are running
-    USE_SERIAL.println(programName);
-    USE_SERIAL.println();
-
-//     for(uint8_t t = 4; t > 0; t--) {
-//         USE_SERIAL.printf("[SETUP] WAIT %d...\n", t);
-//         USE_SERIAL.flush();
-//         delay(1000);
-//     }
+  // So we know what version we are running
+  Serial.println(programName);
+  Serial.println();
 
   // Set up the control button to change te stations
   pinMode(controlButtonPin, INPUT_PULLUP);
@@ -178,7 +167,7 @@ void setup() {
 
   // Initialize the player
   if ( !player.begin()) { // initialise the player
-     USE_SERIAL.println("Error in player init!");
+     Serial.println("Error in player init!");
      player.dumpRegs();
   }
 
@@ -190,7 +179,6 @@ void setup() {
     // Set the volume
     while (!player.readyForData()) {}
     player.setVolume(25,25);  // Higher is quieter.
-    player.dumpRegs();
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");
@@ -199,30 +187,31 @@ void setup() {
 
 
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
-    // wait for WiFi connection
+
+    // Wait for WiFi connection
     const int MAX_CONNECTION_ATTEMPTS = 50;
     int nAttempts = 0;
     while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
-      //USE_SERIAL.print(".");
+      //Serial.print(".");
       delay(50);
       nAttempts++;
 
     }
-    USE_SERIAL.println();
+    Serial.println();
     if (nAttempts >= MAX_CONNECTION_ATTEMPTS) {
-       USE_SERIAL.print("FAILED to connect to WIFI AP after ");
-       USE_SERIAL.print(MAX_CONNECTION_ATTEMPTS);
-       USE_SERIAL.println(" attempts!");
+       Serial.print("FAILED to connect to WIFI AP after ");
+       Serial.print(MAX_CONNECTION_ATTEMPTS);
+       Serial.println(" attempts!");
        printLCD("FAILED to", "connect to WiFi");
     } else {
-       USE_SERIAL.print("Connected to WIFI AP");
+       Serial.print("Connected to WIFI AP");
        printLCD("Connected to", "WiFi");
     }
 
-    // Set the station
+    // Set the initial station
+    // TODO Read the last station set from the EEPROM
     setStation(1);
 
-  //}  // --- wifi connected
 
 }
 
@@ -263,7 +252,7 @@ void loop() {
       }
       if (ringBuffer.availableSpace() == 0)  {
           bufferInitialized = true;
-          USE_SERIAL.println("Buffer initialised");
+          Serial.println("Buffer initialised");
 
       }
     }
@@ -291,15 +280,6 @@ void loop() {
     }
   }
 
-  // Test of the tone control
-//  if (bufferInitialized && checkControlStatus == 1) {
-//    checkControlStatus = 0;
-//    if (toneControl == -15) toneControl = 15;
-//    else toneControl = toneControl -1;
-//    //USE_SERIAL.println(toneControl);
-//    player.setTone(toneControl);
-//  }
-
 
   // Skip a transfer to the VS1053 to give the buffer a chance to reload if
   // has the data amout has fallen below THRESHOLD
@@ -311,7 +291,6 @@ void loop() {
   //           yes: ring buffer data --> VS1053
   //           no:  no-op
   //    no:  no-op
-
   if (bufferInitialized  && !skip) {
       // Transfer to VS1053
       if (player.readyForData()) {
@@ -324,9 +303,6 @@ void loop() {
 
   }
 
-    //    http.end();  // TODO Where?
-
-
 }
 
 
@@ -335,11 +311,12 @@ void loop() {
  *  Handles HTTP redirects
  *  As there are currently difficulties in finding a site that has redriects
  *  this function has NOT BEEN TESTED
+ * TODO Do we need this?
  */
 void handleRedirect() {
     String newSite;
     // TODO
-    USE_SERIAL.println("REDIRECT!");
+    Serial.println("REDIRECT!");
 
     if (http.hasHeader("Location")) {
       newSite = http.header("Location");
@@ -367,7 +344,7 @@ void handleRedirect() {
     }
     else {
       // TODO replace this with the general error handling
-      USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
 
 
@@ -380,24 +357,24 @@ void setStation(int stationId) {
   // Disconnect if already connected
   if (http.connected()) {
     http.end();
-    USE_SERIAL.println("[HTTP] disconnect");
+    Serial.println("[HTTP] disconnect");
   }
 
-  USE_SERIAL.print("[HTTP] begin connection to ");
-  USE_SERIAL.print(stations[stationId]->getName());
-  USE_SERIAL.println(" ...");
+  Serial.print("[HTTP] begin connection to ");
+  Serial.print(stations[stationId]->getName());
+  Serial.println(" ...");
 
 
   // Configure server and url
   http.begin(stations[stationId]->getURL());
 
-  USE_SERIAL.print("[HTTP] GET...\n");
+  Serial.print("[HTTP] GET...\n");
   printLCD("Connecting to", stations[stationId]->getName());
   // start connection and send HTTP header
   int httpCode = http.GET();
   if(httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
-      USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
+      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
 
       // file found at server
       switch (httpCode) {
@@ -420,7 +397,7 @@ void setStation(int stationId) {
   }
   else {
       // TODO replace this with the general error handling
-      USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 }
 /*
@@ -429,29 +406,12 @@ void setStation(int stationId) {
  */
 void handleOtherCode(int httpCode) {
   // TODO as part of the general error handling
-  USE_SERIAL.print("Cannot handle this HTTP code:");
-  USE_SERIAL.println(httpCode);
+  Serial.print("Cannot handle this HTTP code:");
+  Serial.println(httpCode);
 
 }
 
-// Set the VS1053 chip into MP3 mode
-//void set_mp3_mode()
-//{
-//
-//   while (!player.readyForData());
-//
-//   player.sciWrite(VS1053_REG_WRAMADDR, 0xc017);
-//   player.sciWrite(VS1053_REG_WRAM, 0x0003);
-//
-//   player.sciWrite(VS1053_REG_WRAMADDR, 0xc019);
-//   player.sciWrite(VS1053_REG_WRAM, 0x0000);
-//   delay(100);
-//   player.softReset();
-//
-//   delay(100);
-//
-//}
-
+// TO DO replace
 void loadStations() {
 
   stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
@@ -459,6 +419,10 @@ void loadStations() {
   stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
  }
 
+/* Utility function to write to the LCD display.
+ * line1 The top line of the LCD display.
+ * line2 The bottom line of the LCD display.
+ */
 void printLCD(String line1, String line2) {
   lcd.clear();
   lcd.setCursor(0,0);
