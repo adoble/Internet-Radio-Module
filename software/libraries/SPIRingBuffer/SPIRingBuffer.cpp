@@ -36,8 +36,11 @@ SPIRingBuffer::SPIRingBuffer(uint8_t chipSelectPin)
    //SCLK = 18, MISO = 19, MOSI = 23, SS = 5
    SPI.begin();
 
-   // Start the SPI RAM in byte mode (default;
+   // Start the SPI RAM in byte mode (default)
    spiRAM->begin();
+
+   // Reset the indexes
+   reset();
  }
 
  /**
@@ -110,7 +113,7 @@ int32_t SPIRingBuffer::put(uint8_t data)
  */
 int32_t SPIRingBuffer::availableData(void)
 {
-  // Intial condition
+  // Initial condition
   if (tail == -1 && head == -1) return 0;
 
   if (tail <= head) {
