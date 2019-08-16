@@ -16,6 +16,9 @@
 * WiFi              - Standard Arduino  WiFi library
 * WiFiMulti         - Standard library for connecting to multiple access points
 * HTTPClient        - Standard library for HTTP processing .
+* ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
+*                     Handles basic communication with the memory chip.
+* LiquidCrytal      - Controls the LCD display.
 *
 * Created Libaries (for the project)
 * ==================================
@@ -23,10 +26,7 @@
 *                     23LC1024 RAM. This is used to buffer the data to that
 *                     sporadic gaps in the internet connection are
 *                     "smoothed out".
-* ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
-*                     Handles basic communication with the memory chip.
 * Lemon_VS1053      - A local library to control the VS1053
-* LiquidCrytal      - Controls the LCD display.
 *
 */
 
