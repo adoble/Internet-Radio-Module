@@ -98,7 +98,8 @@ const char* password = WIFI_PWD;
 //String stationName = "RPR1 80s";
 //String station= "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"; // SWR3 - 128kbs
 
-Station* stations[3];
+const int NUMBER_STATIONS = 11;
+Station* stations[NUMBER_STATIONS];
 // The index of the station currently playing
 int currentStation;
 
@@ -154,7 +155,7 @@ void setup() {
   Serial.println("Loading stations");
   Serial.flush();
   loadStations();
-  for (int i=0; i< 3; i++) {
+  for (int i=0; i < NUMBER_STATIONS; i++) {
     Serial.print(stations[i]->getName());
     Serial.print(" ");
     Serial.println(stations[i]->getURL());
@@ -223,7 +224,7 @@ void loop() {
   if(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin)) == 3 ) {  //  Control button clicked
     // change station
     currentStation++;
-    if (currentStation > 2) currentStation = 0;
+    if (currentStation > NUMBER_STATIONS - 1) currentStation = 0;
     setStation(currentStation);
     // Reinitialise the  buffer
     bufferInitialized = false;
@@ -413,10 +414,21 @@ void handleOtherCode(int httpCode) {
 
 // TO DO replace
 void loadStations() {
-
+  
   stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
   stations[1] = new Station("RPR1 Best of the 80s", "http://streams.rpr1.de/rpr-80er-128-mp3");
   stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
+  stations[3] = new Station("BBC Radio 1", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p");
+  stations[4] = new Station("BBC Radio 2", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio2_mf_p");
+  stations[5] = new Station("BBC Radio 3", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio3_mf_p");
+  stations[6] = new Station("BBC Radio 4 FM", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio4fm_mf_p");
+  stations[7] = new Station("Classical", "http://listen.181fm.com/181-classical_128k.mp3");
+  stations[8] = new Station("Antenne", "http://mp3channels.webradio.antenne.de/antenne");
+  stations[9] = new Station("FIP autour du rock", "http://chai5she.cdn.dvmr.fr:80/fip-webradio1.mp3");
+  stations[10] = new Station("WDR3", "http://wdr-wdr3-live.icecast.wdr.de/wdr/wdr3/live/mp3/128/stream.mp3");
+
+
+
  }
 
 /* Utility function to write to the LCD display.
