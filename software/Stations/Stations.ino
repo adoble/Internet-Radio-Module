@@ -235,8 +235,19 @@ void displayCurrentGroup() {
     lcd.setCursor(0,0);
     lcd.print(currentGroup->getName());
   }
-  // Change the station to the first station station in the group.
-  changeStation(); 
+  displayCurrentStation();
+}
+
+void displayCurrentStation() {
+  if (currentStation == NULL) {
+    currentGroup->begin();
+    currentStation = currentGroup->next();
+  }
+  if (currentStation != NULL) {
+    clearLCDLine(1);
+    lcd.setCursor(0,1);
+    lcd.print(currentStation->getName());
+  }
 }
 
 void changeStation() {
