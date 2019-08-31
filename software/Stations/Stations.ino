@@ -74,7 +74,7 @@ int tickerTapeStep = 0;
 // Function declarations
 void initializeGroupStructure();
 void readStationConfiguration();
-void clearLCDLine(int);
+void clearDisplayLine(int);
 void tickerTape(int, char*, int, char*, int, int); 
 
 void setup() {
@@ -230,7 +230,7 @@ void readStationConfiguration() {
   http.end();
 }
 void displayCurrentGroup() {
-  clearLCDLine(0);
+  clearDisplayLine(0);
   if (currentGroup != NULL) {
     lcd.setCursor(0,0);
     lcd.print(currentGroup->getName());
@@ -244,7 +244,7 @@ void displayCurrentStation() {
     currentStation = currentGroup->next();
   }
   if (currentStation != NULL) {
-    clearLCDLine(1);
+    clearDisplayLine(1);
     lcd.setCursor(0,1);
     lcd.print(currentStation->getName());
   }
@@ -258,12 +258,10 @@ void changeStation() {
   }
   if (currentGroup == NULL) Serial.println("PANIC GROUP");
   if (currentStation == NULL) Serial.println("PANIC STATION");
-  //lcd.clear();
-  //lcd.home();
-  clearLCDLine(0);
-  lcd.setCursor(0,0);
-  lcd.print(currentGroup->getName());
-  clearLCDLine(1);
+  //clearDisplayLine(0);
+  //lcd.setCursor(0,0);
+  //lcd.print(currentGroup->getName());
+  clearDisplayLine(1);
   lcd.setCursor(0,1);
   lcd.print(currentStation->getName());
   tickerTapeStep = 0;
@@ -275,10 +273,7 @@ void changeGroup() {
    groups->begin();
    currentGroup = groups->next();
   }
-  // Display the group name
-  //lcd.clear();
-  //lcd.home();
-  clearLCDLine(0);
+  clearDisplayLine(0);
   lcd.setCursor(0,0);
   lcd.print(currentGroup->getName());
 
@@ -339,7 +334,7 @@ void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int 
   }
 }
 
- void clearLCDLine(int line) {
+ void clearDisplayLine(int line) {
    if (line < 2) {
     lcd.setCursor(0, line);
     lcd.print("                ");
