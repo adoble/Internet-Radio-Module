@@ -414,7 +414,7 @@ void handleOtherCode(int httpCode) {
 
 // TO DO replace
 void loadStations() {
-  
+
   stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
   stations[1] = new Station("RPR1 Best of the 80s", "http://streams.rpr1.de/rpr-80er-128-mp3");
   stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
@@ -424,8 +424,8 @@ void loadStations() {
   stations[6] = new Station("BBC Radio 4 FM", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio4fm_mf_p");
   stations[7] = new Station("Classical", "http://listen.181fm.com/181-classical_128k.mp3");
   stations[8] = new Station("Antenne", "http://mp3channels.webradio.antenne.de/antenne");
-  stations[9] = new Station("FIP autour du rock", "http://chai5she.cdn.dvmr.fr:80/fip-webradio1.mp3");
-  stations[10] = new Station("WDR3", "http://wdr-wdr3-live.icecast.wdr.de/wdr/wdr3/live/mp3/128/stream.mp3");
+  stations[9] = new Station("Smooth Jazz Florida", "http://us4.internet-radio.com:8266/;stream");
+  stations[10] = new Station("WDR3", "http://wdr-edge-2011.dus-lg.cdn.addradio.net/wdr/wdr3/live/mp3/128/stream.mp3");
 
 
 
