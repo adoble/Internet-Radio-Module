@@ -130,13 +130,17 @@ void loop() {
                else {
                  selectionState = STATION_SELECT;
                  displayCurrentGroup();
+                 displayCurrentStation();
                }
                break;
       case CLICK :
                 if (selectionState == GROUP_SELECT) {
                   changeGroup();
+                  displayCurrentGroup();
+                  displayCurrentStation();
                 } else {  // Station select
                   changeStation();
+                  displayCurrentStation();
                 }
                break;
       default: break; // Ignore other button selectionStates
@@ -258,12 +262,8 @@ void changeStation() {
   }
   if (currentGroup == NULL) Serial.println("PANIC GROUP");
   if (currentStation == NULL) Serial.println("PANIC STATION");
-  //clearDisplayLine(0);
-  //lcd.setCursor(0,0);
-  //lcd.print(currentGroup->getName());
-  clearDisplayLine(1);
-  lcd.setCursor(0,1);
-  lcd.print(currentStation->getName());
+
+  // Reset any ticker tape state
   tickerTapeStep = 0;
 }
 
@@ -273,12 +273,10 @@ void changeGroup() {
    groups->begin();
    currentGroup = groups->next();
   }
-  clearDisplayLine(0);
-  lcd.setCursor(0,0);
-  lcd.print(currentGroup->getName());
-
+ 
   // Set and display the first station in the group
-  changeStation();
+  currentGroup->begin();
+  currentStation = currentGroup->next();
 }
 
 
@@ -340,4 +338,3 @@ void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int 
     lcd.print("                ");
    }
  }
-
