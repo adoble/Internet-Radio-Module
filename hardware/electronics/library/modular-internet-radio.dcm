@@ -1,0 +1,85 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP +1.8V
+K POWER, PWR
+$ENDCMP
+#
+$CMP 23LC1024
+D 1Mbit SPI Serial SRAM with SDI and SQI Interface
+K RAM SPI
+F http://ww1.microchip.com/downloads/en/DeviceDoc/20005142C.pdf
+$ENDCMP
+#
+$CMP AGND
+K POWER, PWR
+$ENDCMP
+#
+$CMP AVDD
+K POWER, PWR
+$ENDCMP
+#
+$CMP C
+D Unpolarized capacitor
+K cap capacitor
+$ENDCMP
+#
+$CMP CONN_01X01
+D Connector, single row, 01x01
+K connector
+$ENDCMP
+#
+$CMP CONN_01X14
+D Connector, single row, 01x14
+K connector
+$ENDCMP
+#
+$CMP CONN_01X15
+D Connector, single row, 01x15
+K connector
+$ENDCMP
+#
+$CMP CP_Small
+D Polarised capacitor
+K cap capacitor
+$ENDCMP
+#
+$CMP C_Small
+D Unpolarized capacitor
+K capacitor cap
+$ENDCMP
+#
+$CMP Crystal
+D Two pin crystal
+K quartz ceramic resonator oscillator
+$ENDCMP
+#
+$CMP Ferrite_Bead_Small
+D Ferrite bead, small symbol
+K L ferite bead inductor filter
+$ENDCMP
+#
+$CMP GND
+K POWER, PWR
+$ENDCMP
+#
+$CMP R
+D Resistor
+K r res resistor
+$ENDCMP
+#
+$CMP Screw_Terminal_1x02
+D 2-pin screw terminal connector
+K screw terminal block
+$ENDCMP
+#
+$CMP VS1053B
+D VS1053b Ogg Vorbis/MP3/AAC/WMA/FLAC/MIDI AUDIO CODEC CIRCUIT
+K MP3 CODEC
+F http://www.vlsi.fi/fileadmin/datasheets/vs1053.pdf
+$ENDCMP
+#
+$CMP VS1053B(LQFP48)
+F http://www.vlsi.fi/fileadmin/datasheets/vs1053.pdf
+$ENDCMP
+#
+#End Doc Library
