@@ -38,50 +38,69 @@ Station* currentStation;
 
 // initialize the LCD library by associating any needed LCD interface pins
 // with the microcontroller pin number it is connected to
-const int rs = 2, en = 15, d4 = 5, d5 = 18, d6 = 23, d7 = 19;
+const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 long blinkTime = 0;
 long currentTime = 0;
 boolean blankDisplay = true;
-  
+
 
 // The control push button
 PushButton controlButton;
-const int controlButtonPin = 4;
+const int controlButtonPin = 14;
 
-// The system states
-enum State {INITIAL, STATION_SELECT, GROUP_SELECT} state;
+// Button states
+const int NOTHING      = 0; //Nothing or Bounce
+const int HOLD        =  1; // Pressed and not released for a long time
+const int LONG_PRESS  =  2; // Pressed and released after a long time
+const int CLICK        = 3; // A single click
+const int DOUBLE_CLICK = 4;
+const int TRIPLE_CLICK = 5;
+const int FOUR_CLICKS  = 6;
+const int FIVE_CLICKS  = 7;
 
-void initializeGroupStructure(); 
+// The station selection states
+enum SelectionState {STATION_SELECT, GROUP_SELECT} selectionState;
+
+// The display bufer used for scolling text tciker tape style
+const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
+const int SPACING = 2; // Number characters used to seperate strings in
+                       // a ticker tape style diplay
+const int ROLL_DISPLAY_TIME = 350; // How quickly the display is rolled in ms
+int scrollTime;
+char displayBuffer[DISPLAY_BUFFER_LEN + 1];
+int tickerTapeStep = 0;
+
+// Function declarations
+void initializeGroupStructure();
 void readStationConfiguration();
+void clearDisplayLine(int);
+void tickerTape(int, char*, int, char*, int, int); 
 
 void setup() {
-    String msg; 
+    String msg;
 
-    state = STATION_SELECT;;
+    selectionState = STATION_SELECT;;
 
     Serial.begin(115200);
 
     // Set up the control button
     pinMode(controlButtonPin, INPUT_PULLUP);
-    
+
     // set up the LCD with the  number of columns and rows
     lcd.begin(16, 2);
 
-    currentTime = blinkTime = millis();
 
-    blinkTime = millis();
 
     Serial.println();
 
-    
+
     msg = "Connect to WIFI";
     lcd.print(msg);
     for(uint8_t t = 4; t > 0; t--) {
       lcd.setCursor(0, 1);
       //Serial.println(msg);
       lcd.print(t);
-      //Serial.flush();
       delay(1000);
     }
 
@@ -96,98 +115,47 @@ void setup() {
 
     }
 
+    // Set all timing variables to now
+    scrollTime = currentTime = blinkTime = millis();
+
 }
 
 void loop() {
 
-  
+
     switch(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin))) {
-      case 0 : //Serial.println("Nothing or Bounce"); 
-               break;
-      case 1 : // Pressed and not released for a long time
-               // Blick the group name and clear the station (second) line
-               if (state == STATION_SELECT) state = GROUP_SELECT;
+      case HOLD : // Toggle the selection state between group selection and stations selection;
+               // Blick the group name and clear the station (second) line.
+               if (selectionState == STATION_SELECT) selectionState = GROUP_SELECT;
                else {
-                 state = STATION_SELECT;
-                 lcd.clear();
-                 lcd.setCursor(0,0);
-                 lcd.print(currentGroup->getName());
-                 lcd.setCursor(0,1);
-                 currentStation = currentGroup->next();
-                 if (currentStation == NULL) {
-                   currentGroup->begin();
-                   currentStation = currentGroup->next();
-                 }
-                 lcd.print(currentStation->getName());
-               }
-               
-               break;
-              
-      case 2 : Serial.println("Pressed and released after a long time"); break;
-      case 3 : Serial.println("A click"); 
-               if (state == GROUP_SELECT) {
-                currentGroup = groups->next();
-                if (currentGroup == NULL) {  // Cycle through the groups
-                  groups->begin();
-                  currentGroup = groups->next();
-                }
-                lcd.clear();
-                lcd.home();
-                lcd.print(currentGroup->getName());
-               } else {  // Station select
-                currentStation = currentGroup->next();
-                if (currentStation == NULL) {
-                  currentGroup->begin();
-                  currentStation = currentGroup->next();
-                }
-                if (currentGroup == NULL) Serial.println("PANIC GROUP");
-                if (currentStation == NULL) Serial.println("PANIC STATION");
-                lcd.clear();
-                lcd.home();
-                lcd.print(currentGroup->getName());
-                lcd.setCursor(0,1);
-                lcd.print(currentStation->getName());
+                 selectionState = STATION_SELECT;
+                 displayCurrentGroup();
+                 displayCurrentStation();
                }
                break;
-      case 4 : Serial.println("Double click"); break;
-      case 5 : Serial.println("Triple click"); break;
-      case 6 : Serial.println("Four clicks"); break;
-      case 7 : Serial.println("Five clicks"); break;
+      case CLICK :
+                if (selectionState == GROUP_SELECT) {
+                  changeGroup();
+                  displayCurrentGroup();
+                  displayCurrentStation();
+                } else {  // Station select
+                  changeStation();
+                  displayCurrentStation();
+                }
+               break;
+      default: break; // Ignore other button selectionStates
    }
 
-   switch (state) {
-    case INITIAL: //DO NOTHING  TODO Simplify code
-                break;
-    case STATION_SELECT: 
-                // Make sure the stations are shown
-//                lcd.setCursor(0,0);
-//                lcd.print(currentGroup->getName());
-//                lcd.setCursor(0,1);
-//                lcd.print(currentStation->getName());
-//                state = INITIAL;
-                break;
-    case GROUP_SELECT:   
-                lcd.setCursor(0,1);
-                lcd.print("                "); // Clear the station details
-                currentTime = millis();
-                if (currentTime > blinkTime) {
-                  // Set the blink time to the future
-                  blinkTime = currentTime + 500;
-                  if (blankDisplay) {
-                    lcd.setCursor(0,0);
-                    lcd.print("                ");
-                    blankDisplay = false;
-                  } else {
-                    lcd.setCursor(0,0);
-                    if (currentGroup == NULL) Serial.println("PANIC HERE");
-                    lcd.print(currentGroup->getName());
-                    blankDisplay = true; 
-                  }
-                }
-                break;
-     default: Serial.println("UNKNOWN STATE");
+   // Determine how the groups of station is displayed when it can be changed
+   if (selectionState == GROUP_SELECT) {
+    blinkGroup();
+   } 
+
+   // Now check if the station length is longer than 16
+   if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
+     rollStationDisplay();
    }
-       
+
 }
 
 void initializeGroupStructure() {
@@ -225,14 +193,14 @@ void readStationConfiguration() {
           payload.pDataBuffer = new char[payload.length];
           //payloadString.toCharArray(payload.pDataBuffer, maxPayloadLength);
           payloadString.toCharArray(payload.pDataBuffer, payload.length);
- 
+
           groups->setup(payload.pDataBuffer, payload.length);
 
           groups->begin();
         	Group* group;
             while ((group = groups->next()) != NULL) {
-            	Serial.println(group->getName()); 
-             
+            	Serial.println(group->getName());
+
             	group->begin();
             	Station* station;
             	while ((station = group->next()) != NULL) {
@@ -241,7 +209,7 @@ void readStationConfiguration() {
                 Serial.print(",");
                 Serial.print(station->getURL());
                 Serial.println();
-               
+
             	}
             }
 
@@ -250,7 +218,7 @@ void readStationConfiguration() {
       groups->begin();
       currentGroup = groups->next();
       if (currentGroup == NULL)  Serial.println("PANIC B");
-      
+
       lcd.clear();
       lcd.print(currentGroup->getName());
       currentGroup->begin();
@@ -265,16 +233,108 @@ void readStationConfiguration() {
 
   http.end();
 }
-
-/*void parseStationLine(String line) {
-  int startIndex = 0;
-  int index = line.indexOf(SEPERATOR);
-
-
-
-  Station* sp =  addStation(
-  while (index > -1) {
-    index = line.indexOf(
+void displayCurrentGroup() {
+  clearDisplayLine(0);
+  if (currentGroup != NULL) {
+    lcd.setCursor(0,0);
+    lcd.print(currentGroup->getName());
   }
+  displayCurrentStation();
+}
 
-}*/
+void displayCurrentStation() {
+  if (currentStation == NULL) {
+    currentGroup->begin();
+    currentStation = currentGroup->next();
+  }
+  if (currentStation != NULL) {
+    clearDisplayLine(1);
+    lcd.setCursor(0,1);
+    lcd.print(currentStation->getName());
+  }
+}
+
+void changeStation() {
+  currentStation = currentGroup->next();
+  if (currentStation == NULL) {
+    currentGroup->begin();
+    currentStation = currentGroup->next();
+  }
+  if (currentGroup == NULL) Serial.println("PANIC GROUP");
+  if (currentStation == NULL) Serial.println("PANIC STATION");
+
+  // Reset any ticker tape state
+  tickerTapeStep = 0;
+}
+
+void changeGroup() {
+  currentGroup = groups->next();
+  if (currentGroup == NULL) {  // Cycle through the groups
+   groups->begin();
+   currentGroup = groups->next();
+  }
+ 
+  // Set and display the first station in the group
+  currentGroup->begin();
+  currentStation = currentGroup->next();
+}
+
+
+void rollStationDisplay() {
+   if ((millis() - scrollTime) > ROLL_DISPLAY_TIME) {  // Time to roll the display,
+     tickerTape(tickerTapeStep, currentStation->getName(), strlen(currentStation->getName()), displayBuffer, DISPLAY_BUFFER_LEN, SPACING);
+     lcd.setCursor(0,1);
+     lcd.print(displayBuffer);
+     tickerTapeStep++;
+     if (tickerTapeStep == (DISPLAY_BUFFER_LEN + SPACING - 1)) tickerTapeStep = 0;
+     scrollTime = millis();
+  }
+}
+
+void blinkGroup() {
+  lcd.setCursor(0,1);
+  lcd.print("                "); // Clear the station details
+  currentTime = millis();
+  if (currentTime > blinkTime) {
+    // Set the blink time to the future
+    blinkTime = currentTime + 500;
+    if (blankDisplay) {
+      lcd.setCursor(0,0);
+      lcd.print("                ");
+      blankDisplay = false;
+    } else {
+      lcd.setCursor(0,0);
+      if (currentGroup == NULL) Serial.println("PANIC HERE");
+      lcd.print(currentGroup->getName());
+      blankDisplay = true;
+    }
+  }
+}
+
+// Step < length of display
+void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int displayLength, int spacing) {
+  int pos;
+
+  for (int i=0; i< displayLength; i++) {
+    pos = rollStep + i;
+    if (pos >= 0 && pos < textLen) {
+
+        displayBuffer[i] = text[pos];
+    }
+    if (pos >= textLen && pos < (textLen + spacing)) {
+        displayBuffer[i] = ' ';
+    }
+    if (pos >= (textLen + spacing)) {
+        displayBuffer[i] = text[pos%(textLen + spacing)];
+    }
+    // Make sure the string terminator is in place
+    displayBuffer[DISPLAY_BUFFER_LEN] = '\0';
+  }
+}
+
+ void clearDisplayLine(int line) {
+   if (line < 2) {
+    lcd.setCursor(0, line);
+    lcd.print("                ");
+   }
+ }
