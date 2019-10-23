@@ -545,39 +545,28 @@ $EndComp
 $Comp
 L modular-internet-radio:CP_Small C15
 U 1 1 5D7F3988
-P 8550 6150
-F 0 "C15" H 8560 6220 50  0000 L CNN
-F 1 "10u" H 8560 6070 50  0000 L CNN
-F 2 "Capacitors_Tantalum_SMD:CP_Tantalum_Case-D_EIA-7343-31_Hand" H 8550 6150 50  0001 C CNN
-F 3 "" H 8550 6150 50  0000 C CNN
-	1    8550 6150
+P 7150 5650
+F 0 "C15" H 7160 5720 50  0000 L CNN
+F 1 "10u" H 7160 5570 50  0000 L CNN
+F 2 "Capacitors_Tantalum_SMD:CP_Tantalum_Case-D_EIA-7343-31_Hand" H 7150 5650 50  0001 C CNN
+F 3 "" H 7150 5650 50  0000 C CNN
+	1    7150 5650
 	1    0    0    -1  
 $EndComp
 $Comp
 L modular-internet-radio:CP_Small C19
 U 1 1 5D7F3A2C
-P 9550 6150
-F 0 "C19" H 9560 6220 50  0000 L CNN
-F 1 "10u" H 9560 6070 50  0000 L CNN
-F 2 "Capacitors_Tantalum_SMD:CP_Tantalum_Case-D_EIA-7343-31_Hand" H 9550 6150 50  0001 C CNN
-F 3 "" H 9550 6150 50  0000 C CNN
-	1    9550 6150
+P 7150 4850
+F 0 "C19" H 7150 4950 50  0000 L CNN
+F 1 "10u" H 7160 4770 50  0000 L CNN
+F 2 "Capacitors_Tantalum_SMD:CP_Tantalum_Case-D_EIA-7343-31_Hand" H 7150 4850 50  0001 C CNN
+F 3 "" H 7150 4850 50  0000 C CNN
+	1    7150 4850
 	1    0    0    -1  
 $EndComp
-$Comp
-L modular-internet-radio:GND #PWR038
-U 1 1 5D7F3C90
-P 9550 6250
-F 0 "#PWR038" H 9550 6000 50  0001 C CNN
-F 1 "GND" H 9550 6100 50  0000 C CNN
-F 2 "" H 9550 6250 50  0000 C CNN
-F 3 "" H 9550 6250 50  0000 C CNN
-	1    9550 6250
-	1    0    0    -1  
-$EndComp
-Text Notes 8050 6200 0    60   ~ 0
+Text Notes 6650 5700 0    60   ~ 0
 Tantalum
-Text Notes 9700 6150 0    60   ~ 0
+Text Notes 6650 4900 0    60   ~ 0
 Tantalum
 $Comp
 L modular-internet-radio:AGND #PWR039
@@ -1384,8 +1373,6 @@ Wire Wire Line
 	8700 5950 8550 5950
 Wire Wire Line
 	8550 5800 8550 5950
-Connection ~ 8550 5950
-Connection ~ 9550 5950
 Wire Wire Line
 	10650 1000 10650 1050
 Wire Wire Line
@@ -1838,10 +1825,6 @@ Wire Wire Line
 Wire Wire Line
 	8100 1650 8100 1700
 Wire Wire Line
-	8550 5950 8550 6050
-Wire Wire Line
-	9550 5950 9550 6050
-Wire Wire Line
 	7300 3950 7300 4050
 Wire Wire Line
 	7400 3950 7500 3950
@@ -1964,17 +1947,6 @@ F 1 "GND" H 7155 4877 50  0000 C CNN
 F 2 "" H 7150 5050 50  0000 C CNN
 F 3 "" H 7150 5050 50  0000 C CNN
 	1    7150 5050
-	1    0    0    -1  
-$EndComp
-$Comp
-L modular-internet-radio:GND #PWR033
-U 1 1 5DA4FBB4
-P 8550 6250
-F 0 "#PWR033" H 8550 6000 50  0001 C CNN
-F 1 "GND" H 8555 6077 50  0000 C CNN
-F 2 "" H 8550 6250 50  0000 C CNN
-F 3 "" H 8550 6250 50  0000 C CNN
-	1    8550 6250
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2122,28 +2094,6 @@ F 3 "~" H 1550 5350 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Connection ~ 1550 5350
-$Comp
-L modular-internet-radio:C_Small C4
-U 1 1 5DA3BCB8
-P 7150 4850
-F 0 "C4" H 7160 4920 50  0000 L CNN
-F 1 "10u" H 7160 4770 50  0000 L CNN
-F 2 "Capacitors_SMD:C_0805_HandSoldering" H 7150 4850 50  0001 C CNN
-F 3 "" H 7150 4850 50  0000 C CNN
-	1    7150 4850
-	1    0    0    -1  
-$EndComp
-$Comp
-L modular-internet-radio:C_Small C5
-U 1 1 5DA3C160
-P 7150 5650
-F 0 "C5" H 7160 5720 50  0000 L CNN
-F 1 "10u" H 7160 5570 50  0000 L CNN
-F 2 "Capacitors_SMD:C_0805_HandSoldering" H 7150 5650 50  0001 C CNN
-F 3 "" H 7150 5650 50  0000 C CNN
-	1    7150 5650
-	1    0    0    -1  
-$EndComp
 $Comp
 L modular-internet-radio:C_Small C14
 U 1 1 5DA5C775
