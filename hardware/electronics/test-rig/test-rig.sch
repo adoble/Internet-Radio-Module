@@ -2155,55 +2155,6 @@ F 3 "" H 8550 4850 50  0000 C CNN
 	1    8550 4850
 	1    0    0    -1  
 $EndComp
-$Comp
-L conn:CONN_01X06 P8
-U 1 1 5DA474B9
-P 3750 4350
-F 0 "P8" H 3828 4345 50  0000 L CNN
-F 1 "CONN_01X06" H 3828 4300 50  0001 L CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 3750 4350 50  0001 C CNN
-F 3 "" H 3750 4350 50  0000 C CNN
-	1    3750 4350
-	1    0    0    -1  
-$EndComp
-$Comp
-L modular-internet-radio:GND #PWR0101
-U 1 1 5DA48C32
-P 3550 4700
-F 0 "#PWR0101" H 3550 4450 50  0001 C CNN
-F 1 "GND" H 3555 4527 50  0000 C CNN
-F 2 "" H 3550 4700 50  0000 C CNN
-F 3 "" H 3550 4700 50  0000 C CNN
-	1    3550 4700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3550 4600 3550 4700
-$Comp
-L modular-internet-radio:+3.3V #PWR0102
-U 1 1 5DA606C5
-P 3250 4050
-F 0 "#PWR0102" H 3250 3900 50  0001 C CNN
-F 1 "+3.3V" H 3265 4223 50  0000 C CNN
-F 2 "" H 3250 4050 50  0000 C CNN
-F 3 "" H 3250 4050 50  0000 C CNN
-	1    3250 4050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3250 4050 3250 4400
-Wire Wire Line
-	3250 4400 3550 4400
-Wire Wire Line
-	3550 4300 3350 4300
-Wire Wire Line
-	3550 4200 3350 4200
-Text Label 3550 4300 2    60   ~ 0
-RXDO
-Text Label 3550 4200 2    60   ~ 0
-TXD0
-NoConn ~ 3550 4100
-NoConn ~ 3550 4500
 Wire Wire Line
 	6000 6150 6000 5600
 $Comp
