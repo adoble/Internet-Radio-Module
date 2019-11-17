@@ -72,6 +72,11 @@ D 2-pin screw terminal connector
 K screw terminal block
 $ENDCMP
 #
+$CMP TSR1-2450
+D DC/DC-Converter
+F https://produktinfo.conrad.com/datenblaetter/150000-174999/156673-da-01-de-DC_DC_WANDLER_1A_TSR_1_2450.pdf?direct=
+$ENDCMP
+#
 $CMP VS1053B
 D VS1053b Ogg Vorbis/MP3/AAC/WMA/FLAC/MIDI AUDIO CODEC CIRCUIT
 K MP3 CODEC

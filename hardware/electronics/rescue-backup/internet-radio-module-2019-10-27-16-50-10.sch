@@ -1,6 +1,38 @@
-EESchema Schematic File Version 4
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:maker
+LIBS:Switch
+LIBS:SparkFun-Boards
 LIBS:internet-radio-module-cache
-EELAYER 30 0
+EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -35,7 +67,7 @@ F14 "GND" B L 3550 6750 60
 F15 "AUDIO-GROUND" I R 5850 4000 60 
 $EndSheet
 $Comp
-L internet-radio-module-rescue:GND #PWR6
+L GND #PWR6
 U 1 1 5D30B533
 P 2100 5900
 F 0 "#PWR6" H 2100 5650 50  0001 C CNN
@@ -48,7 +80,7 @@ $EndComp
 Wire Wire Line
 	2100 5450 2100 5900
 $Comp
-L internet-radio-module-rescue:LCD-016N002L DS1
+L LCD-016N002L DS1
 U 1 1 5D30B6CE
 P 1700 2200
 F 0 "DS1" H 900 2600 50  0000 C CNN
@@ -65,7 +97,7 @@ Wire Wire Line
 Wire Wire Line
 	2650 6600 3550 6600
 $Comp
-L internet-radio-module-rescue:GND #PWR5
+L GND #PWR5
 U 1 1 5D31C363
 P 1650 7150
 F 0 "#PWR5" H 1650 6900 50  0001 C CNN
@@ -76,7 +108,7 @@ F 3 "" H 1650 7150 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L internet-radio-module-rescue:GND #PWR1
+L GND #PWR1
 U 1 1 5D31C677
 P 950 2700
 F 0 "#PWR1" H 950 2450 50  0001 C CNN
@@ -87,7 +119,7 @@ F 3 "" H 950 2700 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L internet-radio-module-rescue:+5V #PWR2
+L +5V #PWR2
 U 1 1 5D31C6C7
 P 1050 3000
 F 0 "#PWR2" H 1050 2850 50  0001 C CNN
@@ -100,7 +132,7 @@ $EndComp
 Wire Wire Line
 	1050 2700 1050 3000
 $Comp
-L internet-radio-module-rescue:GND #PWR8
+L GND #PWR8
 U 1 1 5D31C747
 P 2450 2700
 F 0 "#PWR8" H 2450 2450 50  0001 C CNN
@@ -111,7 +143,7 @@ F 3 "" H 2450 2700 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L internet-radio-module-rescue:+5V #PWR7
+L +5V #PWR7
 U 1 1 5D31C7C4
 P 2350 3000
 F 0 "#PWR7" H 2350 2850 50  0001 C CNN
@@ -124,7 +156,7 @@ $EndComp
 Wire Wire Line
 	2350 2700 2350 3000
 $Comp
-L internet-radio-module-rescue:GND #PWR3
+L GND #PWR3
 U 1 1 5D31C851
 P 1350 2700
 F 0 "#PWR3" H 1350 2450 50  0001 C CNN
@@ -135,7 +167,7 @@ F 3 "" H 1350 2700 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L internet-radio-module-rescue:SW_SPST SW2
+L SW_SPST SW2
 U 1 1 5D31DBE0
 P 2450 6600
 F 0 "SW2" H 2450 6725 50  0000 C CNN
@@ -148,7 +180,7 @@ $EndComp
 Wire Wire Line
 	1650 6600 2250 6600
 $Comp
-L internet-radio-module-rescue:+12V #PWR4
+L +12V #PWR4
 U 1 1 5D31DEA9
 P 1650 6600
 F 0 "#PWR4" H 1650 6450 50  0001 C CNN
@@ -159,7 +191,7 @@ F 3 "" H 1650 6600 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L internet-radio-module-rescue:JACK_TRS_6PINS J1
+L JACK_TRS_6PINS J1
 U 1 1 5D31E091
 P 8950 3800
 F 0 "J1" H 8950 4200 50  0000 C CNN
@@ -186,7 +218,7 @@ POWER \nSWITCH
 Text Notes 1500 7250 1    60   ~ 0
 EXTERNAL SUPPLY
 $Comp
-L internet-radio-module-rescue:SW_Push SW1
+L SW_Push SW1
 U 1 1 5D31EEDC
 P 2300 5450
 F 0 "SW1" H 2350 5550 50  0000 L CNN
@@ -239,7 +271,7 @@ Wire Wire Line
 Wire Wire Line
 	3100 6750 3550 6750
 $Comp
-L internet-radio-module-rescue:+5V #PWR9
+L +5V #PWR9
 U 1 1 5D3287B0
 P 3300 6400
 F 0 "#PWR9" H 3300 6250 50  0001 C CNN

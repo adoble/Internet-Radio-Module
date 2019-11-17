@@ -1,0 +1,187 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# irm_pcb-rescue_+3.3V-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_+3.3V-internet-radio-module-rescue #PWR 0 0 Y Y 1 F P
+F0 "#PWR" 0 -150 50 H I C CNN
+F1 "irm_pcb-rescue_+3.3V-internet-radio-module-rescue" 0 140 50 H V C CNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+P 2 0 1 0 -30 50 0 100 N
+P 2 0 1 0 0 0 0 100 N
+P 2 0 1 0 0 100 30 50 N
+X +3V3 1 0 0 0 U 50 50 1 1 W N
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_+5V-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_+5V-internet-radio-module-rescue #PWR 0 0 Y Y 1 F P
+F0 "#PWR" 0 -150 50 H I C CNN
+F1 "irm_pcb-rescue_+5V-internet-radio-module-rescue" 0 140 50 H V C CNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+P 2 0 1 0 -30 50 0 100 N
+P 2 0 1 0 0 0 0 100 N
+P 2 0 1 0 0 100 30 50 N
+X +5V 1 0 0 0 U 50 50 1 1 W N
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_74LS125-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_74LS125-internet-radio-module-rescue U 0 30 Y Y 4 F N
+F0 "U" 0 100 50 H V L BNN
+F1 "irm_pcb-rescue_74LS125-internet-radio-module-rescue" 50 -150 50 H V L TNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+P 4 0 1 0 -150 150 -150 -150 150 0 -150 150 N
+X VCC 14 -150 150 0 D 50 30 0 0 W N
+X GND 7 -150 -150 0 U 50 30 0 0 W N
+X E 1 0 -300 220 U 50 30 1 0 I I
+X E 4 0 -300 220 U 50 30 2 0 I I
+X E 10 0 -300 220 U 50 30 3 0 I I
+X E 13 0 -300 220 U 50 30 4 0 I I
+X D 2 -450 0 300 R 50 30 1 1 I
+X O 3 450 0 300 L 50 30 1 1 T
+X D 5 -450 0 300 R 50 30 2 1 I
+X O 6 450 0 300 L 50 30 2 1 T
+X O 8 450 0 300 L 50 30 3 1 T
+X D 9 -450 0 300 R 50 30 3 1 I
+X O 11 450 0 300 L 50 30 4 1 T
+X D 12 -450 0 300 R 50 30 4 1 I
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_ESP32_THING_W_ANT_KEEPOUT-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_ESP32_THING_W_ANT_KEEPOUT-internet-radio-module-rescue B 0 40 Y Y 1 L N
+F0 "B" -400 1150 45 H V L BNN
+F1 "irm_pcb-rescue_ESP32_THING_W_ANT_KEEPOUT-internet-radio-module-rescue" -400 -1100 45 H V L BNN
+F2 "ESP32_THING" 0 1200 20 H I C CNN
+F3 "" 0 0 60 H I C CNN
+F4 "DEV-13907" 0 1250 60 H V C CNN
+$FPLIST
+ *ESP32_THING*
+$ENDFPLIST
+DRAW
+P 5 1 1 0 -400 -1000 -400 1100 400 1100 400 -1000 -400 -1000 f
+X GND 1 -500 -900 100 R 40 40 1 1 B
+X 27 10 -500 0 100 R 40 40 1 1 B
+X 26 11 -500 100 100 R 40 40 1 1 B
+X 25 12 -500 200 100 R 40 40 1 1 B
+X 35 13 -500 300 100 R 40 40 1 1 B
+X 34 14 -500 400 100 R 40 40 1 1 B
+X 33 15 -500 500 100 R 40 40 1 1 B
+X 32 16 -500 600 100 R 40 40 1 1 B
+X 39 17 -500 700 100 R 40 40 1 1 B
+X 38 18 -500 800 100 R 40 40 1 1 B
+X 37 19 -500 900 100 R 40 40 1 1 B
+X VUSB 2 -500 -800 100 R 40 40 1 1 B
+X 36 20 -500 1000 100 R 40 40 1 1 B
+X GND 21 500 1000 100 L 40 40 1 1 B
+X 21 22 500 900 100 L 40 40 1 1 B
+X TX 23 500 800 100 L 40 40 1 1 B
+X RX 24 500 700 100 L 40 40 1 1 B
+X 22 25 500 600 100 L 40 40 1 1 B
+X 19 26 500 500 100 L 40 40 1 1 B
+X 23 27 500 400 100 L 40 40 1 1 B
+X 18 28 500 300 100 L 40 40 1 1 B
+X 5 29 500 200 100 L 40 40 1 1 B
+X VBAT 3 -500 -700 100 R 40 40 1 1 B
+X 15 30 500 100 100 L 40 40 1 1 B
+X 2 31 500 0 100 L 40 40 1 1 B
+X 0 32 500 -100 100 L 40 40 1 1 B
+X 4 33 500 -200 100 L 40 40 1 1 B
+X 17 34 500 -300 100 L 40 40 1 1 B
+X 16 35 500 -400 100 L 40 40 1 1 B
+X 3V3 36 500 -500 100 L 40 40 1 1 B
+X GND 37 500 -600 100 L 40 40 1 1 B
+X VBAT 38 500 -700 100 L 40 40 1 1 B
+X VUSB 39 500 -800 100 L 40 40 1 1 B
+X GND 4 -500 -600 100 R 40 40 1 1 B
+X GND 40 500 -900 100 L 40 40 1 1 B
+X 3V3 5 -500 -500 100 R 40 40 1 1 B
+X ~RST~ 6 -500 -400 100 R 40 40 1 1 B
+X 13 7 -500 -300 100 R 40 40 1 1 B
+X 12 8 -500 -200 100 R 40 40 1 1 B
+X 14 9 -500 -100 100 R 40 40 1 1 B
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_GND-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_GND-internet-radio-module-rescue #PWR 0 0 Y Y 1 F P
+F0 "#PWR" 0 -250 50 H I C CNN
+F1 "irm_pcb-rescue_GND-internet-radio-module-rescue" 0 -150 50 H V C CNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+P 6 0 1 0 0 0 0 -50 50 -50 0 -100 -50 -50 0 -50 N
+X GND 1 0 0 0 D 50 50 1 1 W N
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_POT_TRIM-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_POT_TRIM-internet-radio-module-rescue RV 0 40 N N 1 F N
+F0 "RV" -175 0 50 V V C CNN
+F1 "irm_pcb-rescue_POT_TRIM-internet-radio-module-rescue" -100 0 50 V V C CNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+S 40 100 -40 -100 0 1 10 N
+P 2 0 1 0 60 30 60 -30 N
+P 2 0 1 0 100 0 60 0 N
+X 1 1 0 150 50 D 50 50 1 1 P
+X 2 2 150 0 50 L 50 50 1 1 P
+X 3 3 0 -150 50 U 50 50 1 1 P
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_R-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_R-internet-radio-module-rescue R 0 0 N Y 1 F N
+F0 "R" 80 0 50 V V C CNN
+F1 "irm_pcb-rescue_R-internet-radio-module-rescue" 0 0 50 V V C CNN
+F2 "" -70 0 50 V V C CNN
+F3 "" 0 0 50 H V C CNN
+$FPLIST
+ R_*
+ Resistor_*
+$ENDFPLIST
+DRAW
+S -40 -100 40 100 0 1 10 N
+X ~ 1 0 150 50 D 50 50 1 1 P
+X ~ 2 0 -150 50 U 50 50 1 1 P
+ENDDRAW
+ENDDEF
+#
+# irm_pcb-rescue_SWITCH_PUSHBUTTON-internet-radio-module-rescue
+#
+DEF irm_pcb-rescue_SWITCH_PUSHBUTTON-internet-radio-module-rescue SW 0 40 N N 1 L N
+F0 "SW" -100 140 45 H V L BNN
+F1 "irm_pcb-rescue_SWITCH_PUSHBUTTON-internet-radio-module-rescue" -100 -90 45 H V L BNN
+F2 "" 0 0 60 H I C CNN
+F3 "" 0 0 60 H I C CNN
+$FPLIST
+ *BTN_CK_KSS*
+ *TACT_PANA-EVQ*
+ *PUSHBUTTON_SMD_SJ*
+$ENDFPLIST
+DRAW
+P 2 1 0 0 -100 50 0 50 N
+P 2 1 0 0 -25 90 0 90 N
+P 2 1 0 0 0 50 0 90 N
+P 2 1 0 0 0 50 100 50 N
+P 2 1 0 0 0 90 25 90 N
+X P$1 P$1 -200 0 100 R 40 40 1 1 P
+X P$2 P$2 200 0 100 L 40 40 1 1 P
+ENDDRAW
+ENDDEF
+#
+#End Library
