@@ -20,7 +20,7 @@ U 1 1 5D31F238
 P 7000 3150
 F 0 "RV1" V 6825 3150 50  0000 C CNN
 F 1 "10K" V 6900 3150 50  0000 C CNN
-F 2 "irm_pcb:Potentiometer_Trimmer_Bourns_3339H_Horizontal" H 7000 3150 50  0001 C CNN
+F 2 "irm_pcb:Potentiometer_Trimmer_Bourns_3386F" H 7000 3150 50  0001 C CNN
 F 3 "" H 7000 3150 50  0000 C CNN
 	1    7000 3150
 	1    0    0    1   

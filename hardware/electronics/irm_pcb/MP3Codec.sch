@@ -232,7 +232,7 @@ F 1 "Screw_Terminal_1x02" V 7050 3850 50  0001 C TNN
 F 2 "irm_pcb:Screw_Terminal_1x02" H 7200 3625 50  0001 C CNN
 F 3 "" H 7175 3850 50  0001 C CNN
 	1    7200 3850
-	-1   0    0    1   
+	-1   0    0    -1  
 $EndComp
 $Comp
 L modular-internet-radio:LM1117-1.8 U?
@@ -552,23 +552,8 @@ F 3 "" H 4250 1300 60  0001 C CNN
 	1    4250 1050
 	1    0    0    -1  
 $EndComp
-Text Notes 4350 700  0    60   ~ 0
-SPI BOOT DISABLE
 Text Notes 4000 1350 0    60   ~ 0
 MIDI BOOT WHEN \nJUMPER CLOSED
-$Comp
-L modular-internet-radio:R R?
-U 1 1 5DD30D51
-P 5000 800
-AR Path="/5DD30D51" Ref="R?"  Part="1" 
-AR Path="/5DCC2CF1/5DD30D51" Ref="R5"  Part="1" 
-F 0 "R5" V 5080 800 50  0000 C CNN
-F 1 "100K" V 5000 800 50  0000 C CNN
-F 2 "Resistors_SMD:R_0805_HandSoldering" V 4930 800 50  0001 C CNN
-F 3 "" H 5000 800 50  0000 C CNN
-	1    5000 800 
-	0    1    1    0   
-$EndComp
 $Comp
 L modular-internet-radio:R R?
 U 1 1 5DD30D57
@@ -582,8 +567,6 @@ F 3 "" H 5000 1050 50  0000 C CNN
 	1    5000 1050
 	0    1    1    0   
 $EndComp
-Text Label 4550 800  0    60   ~ 0
-GPIO0
 Text Label 4550 1050 0    60   ~ 0
 GPIO1
 $Comp
@@ -907,17 +890,11 @@ Wire Wire Line
 	3750 4000 3750 3900
 Connection ~ 3650 4000
 Wire Wire Line
-	4500 800  4850 800 
-Wire Wire Line
 	4850 1050 4500 1050
 Wire Wire Line
 	3950 1050 4050 1050
 Wire Wire Line
 	5150 1050 5250 1050
-Wire Wire Line
-	5150 800  5250 800 
-Wire Wire Line
-	5250 800  5250 1050
 Wire Wire Line
 	4600 3900 4600 4000
 Wire Wire Line
@@ -1464,7 +1441,6 @@ SI
 Text HLabel 5500 3000 2    50   Input ~ 0
 SCK
 Connection ~ 1650 2700
-Connection ~ 5250 1050
 $Comp
 L modular-internet-radio:AGND #PWR?
 U 1 1 5DF4B18D

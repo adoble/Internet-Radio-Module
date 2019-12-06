@@ -88,7 +88,7 @@ F 3 "" H 5950 3850 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	7700 4450 7700 4550
-Text Notes 2750 4300 0    50   ~ 0
+Text Notes 3150 4250 0    50   ~ 0
 POWER IN
 $Comp
 L power:GND #PWR038
@@ -128,9 +128,9 @@ Text Notes 6550 5150 0    50   ~ 0
 VS1053b
 Text Notes 6950 5150 0    50   ~ 0
 80 mA
-Text Notes 6550 5250 0    50   ~ 0
+Text Notes 6550 5300 0    50   ~ 0
 Sum
-Text Notes 6900 5250 0    50   ~ 0
+Text Notes 6900 5300 0    50   ~ 0
 580 mA
 Text Notes 6700 5600 0    50   ~ 10
 800 mA
@@ -396,8 +396,8 @@ F 3 "~" H 4150 4250 50  0001 C CNN
 	1    4150 4250
 	1    0    0    -1  
 $EndComp
-Text Notes 2750 4400 0    50   ~ 0
-(NOM 24V, MAX 36V)
+Text Notes 3150 4550 0    50   ~ 0
+(NOM 24V, \n MIN 6.5V, \n MAX 36V)
 $Comp
 L modular-internet-radio:TSR1-2450 U7
 U 1 1 5DD1AFAB
@@ -446,8 +446,24 @@ Wire Notes Line
 Wire Notes Line
 	6300 4850 6300 5400
 Wire Wire Line
-	3850 4250 4150 4250
+	3850 4250 3950 4250
 Connection ~ 4150 4250
 Wire Wire Line
 	4150 4250 5100 4250
+Wire Notes Line
+	6450 5200 7600 5200
+$Comp
+L power:+24V #PWR0105
+U 1 1 5DE7C86F
+P 3950 4250
+F 0 "#PWR0105" H 3950 4100 50  0001 C CNN
+F 1 "+24V" H 3965 4423 50  0000 C CNN
+F 2 "" H 3950 4250 50  0001 C CNN
+F 3 "" H 3950 4250 50  0001 C CNN
+	1    3950 4250
+	1    0    0    -1  
+$EndComp
+Connection ~ 3950 4250
+Wire Wire Line
+	3950 4250 4150 4250
 $EndSCHEMATC
