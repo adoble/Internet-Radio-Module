@@ -1,1 +1,78 @@
+17251205722740
+irm_pcb
+ESP32-WROOM-32-Espressif-Symbol-Kicad-62379
+
+
 0
+39
+39
+irm_pcb
+Pin_Header_Straight_2x05_Pitch2.54mm_CC
+Through hole straight pin header, 2x05, 2.54mm pitch, double rows
+Through hole pin header THT 2x05 2.54mm double row
+0
+10
+10
+irm_pcb
+Pin_Header_Straight_2x15_Pitch2.54mm
+Through hole straight pin header, 2x15, 2.54mm pitch, double rows
+Through hole pin header THT 2x15 2.54mm double row
+0
+30
+30
+irm_pcb
+Potentiometer_Trimmer_Bourns_3339H_Horizontal
+Potentiometer, horizontally mounted, Omeg PC16PU, Omeg PC16PU, Omeg PC16PU, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GH/249GH Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148A/149A Single with mounting plates, Vishay/Spectrol 148/149 Double, Vishay/Spectrol 148A/149A Double with mounting plates, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16SV Single, Piher PC-16 Double, Piher PC-16 Triple, Piher T16H Single, Piher T16L Single, Piher T16H Double, Alps RK163 Single, Alps RK163 Double, Alps RK097 Single, Alps RK097 Double, Bourns PTV09A-2 Single with mounting sleve Single, Bourns PTV09A-1 with mounting sleve Single, Bourns PRS11S Single, Alps RK09K Single with mounting sleve Single, Alps RK09K with mounting sleve Single, Alps RK09L Single, Alps RK09L Single, Alps RK09L Double, Alps RK09L Double, Alps RK09Y Single, Bourns 3339S Single, Bourns 3339S Single, Bourns 3339P Single, Bourns 3339H Single, http://www.alps.com/prod/info/E/HTML/Potentiometer/RotaryPotentiometers/RK09Y11/RK09Y11L0001.html
+Potentiometer horizontal  Omeg PC16PU  Omeg PC16PU  Omeg PC16PU  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GH/249GH Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148A/149A Single with mounting plates  Vishay/Spectrol 148/149 Double  Vishay/Spectrol 148A/149A Double with mounting plates  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16SV Single  Piher PC-16 Double  Piher PC-16 Triple  Piher T16H Single  Piher T16L Single  Piher T16H Double  Alps RK163 Single  Alps RK163 Double  Alps RK097 Single  Alps RK097 Double  Bourns PTV09A-2 Single with mounting sleve Single  Bourns PTV09A-1 with mounting sleve Single  Bourns PRS11S Single  Alps RK09K Single with mounting sleve Single  Alps RK09K with mounting sleve Single  Alps RK09L Single  Alps RK09L Single  Alps RK09L Double  Alps RK09L Double  Alps RK09Y Single  Bourns 3339S Single  Bourns 3339S Single  Bourns 3339P Single  Bourns 3339H Single
+0
+3
+3
+irm_pcb
+Potentiometer_Trimmer_Bourns_3386F
+Potentiometer, horizontally mounted, Omeg PC16PU, Omeg PC16PU, Omeg PC16PU, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GJ/249GJ Single, Vishay/Spectrol 248GH/249GH Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148/149 Single, Vishay/Spectrol 148A/149A Single with mounting plates, Vishay/Spectrol 148/149 Double, Vishay/Spectrol 148A/149A Double with mounting plates, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16 Single, Piher PC-16SV Single, Piher PC-16 Double, Piher PC-16 Triple, Piher T16H Single, Piher T16L Single, Piher T16H Double, Alps RK163 Single, Alps RK163 Double, Alps RK097 Single, Alps RK097 Double, Bourns PTV09A-2 Single with mounting sleve Single, Bourns PTV09A-1 with mounting sleve Single, Bourns PRS11S Single, Alps RK09K Single with mounting sleve Single, Alps RK09K with mounting sleve Single, Alps RK09L Single, Alps RK09L Single, Alps RK09L Double, Alps RK09L Double, Alps RK09Y Single, Bourns 3339S Single, Bourns 3339S Single, Bourns 3339P Single, Bourns 3339H Single, http://www.alps.com/prod/info/E/HTML/Potentiometer/RotaryPotentiometers/RK09Y11/RK09Y11L0001.html
+Potentiometer horizontal  Omeg PC16PU  Omeg PC16PU  Omeg PC16PU  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GJ/249GJ Single  Vishay/Spectrol 248GH/249GH Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148/149 Single  Vishay/Spectrol 148A/149A Single with mounting plates  Vishay/Spectrol 148/149 Double  Vishay/Spectrol 148A/149A Double with mounting plates  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16 Single  Piher PC-16SV Single  Piher PC-16 Double  Piher PC-16 Triple  Piher T16H Single  Piher T16L Single  Piher T16H Double  Alps RK163 Single  Alps RK163 Double  Alps RK097 Single  Alps RK097 Double  Bourns PTV09A-2 Single with mounting sleve Single  Bourns PTV09A-1 with mounting sleve Single  Bourns PRS11S Single  Alps RK09K Single with mounting sleve Single  Alps RK09K with mounting sleve Single  Alps RK09L Single  Alps RK09L Single  Alps RK09L Double  Alps RK09L Double  Alps RK09Y Single  Bourns 3339S Single  Bourns 3339S Single  Bourns 3339P Single  Bourns 3339H Single
+0
+3
+3
+irm_pcb
+SW-PUSH-RND-SMALL
+
+
+0
+2
+2
+irm_pcb
+Screw_Terminal_1x02
+simple 2-pin terminal block, pitch 5.08mm, revamped version of bornier2
+terminal block bornier2
+0
+2
+2
+irm_pcb
+Screw_Terminal_1x02_Pitch2.54mm
+simple 2-pin terminal block, pitch 5.08mm, revamped version of bornier2
+terminal block bornier2
+0
+2
+2
+irm_pcb
+Screw_Terminal_1x02_Pitch5.00mm
+simple 2-pin terminal block, pitch 5.0mm
+terminal block bornier2
+0
+2
+2
+irm_pcb
+Stereo_Jack-Socket_6_Pin
+
+
+0
+6
+6
+irm_pcb
+TSR1-24_TO-220-3_V
+TO-220-3, Vertical, RM 2.54mm
+TO-220-3 Vertical RM 2.54mm
+0
+3
+3
