@@ -232,7 +232,7 @@ F 1 "Screw_Terminal_1x02" V 7050 3850 50  0001 C TNN
 F 2 "irm_pcb:Screw_Terminal_1x02" H 7200 3625 50  0001 C CNN
 F 3 "" H 7175 3850 50  0001 C CNN
 	1    7200 3850
-	-1   0    0    1   
+	-1   0    0    -1  
 $EndComp
 $Comp
 L modular-internet-radio:LM1117-1.8 U?
@@ -634,7 +634,7 @@ F 1 "Screw_Terminal_1x02" V 7050 3250 50  0001 C TNN
 F 2 "irm_pcb:Screw_Terminal_1x02" H 7200 3025 50  0001 C CNN
 F 3 "" H 7175 3250 50  0001 C CNN
 	1    7200 3250
-	-1   0    0    -1  
+	-1   0    0    1   
 $EndComp
 $Comp
 L modular-internet-radio:AGND #PWR?

@@ -498,15 +498,11 @@ D5
 Text HLabel 7350 2100 2    50   Output ~ 0
 RS
 Wire Wire Line
-	2600 3550 2600 1550
-Wire Wire Line
 	2600 1550 7100 1550
 Wire Wire Line
 	7100 1550 7100 2100
 Wire Wire Line
 	7100 2100 7350 2100
-Wire Wire Line
-	2600 3550 4150 3550
 Text Notes 7250 3650 0    50   ~ 0
 -> LCD DRIVERS
 Wire Notes Line
@@ -821,4 +817,66 @@ Wire Notes Line
 	7800 6050 7800 4700
 Wire Notes Line
 	7800 4700 6600 4700
+Wire Wire Line
+	2850 4350 3000 4350
+Connection ~ 2850 4350
+$Comp
+L modular-internet-radio:GND #PWR?
+U 1 1 5DFD3A19
+P 2850 4350
+AR Path="/5DFD3A19" Ref="#PWR?"  Part="1" 
+AR Path="/5DB85C19/5DFD3A19" Ref="#PWR0106"  Part="1" 
+F 0 "#PWR0106" H 2850 4100 50  0001 C CNN
+F 1 "GND" H 2850 4200 50  0000 C CNN
+F 2 "" H 2850 4350 50  0000 C CNN
+F 3 "" H 2850 4350 50  0000 C CNN
+	1    2850 4350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2850 4050 3000 4050
+Connection ~ 2850 4050
+$Comp
+L modular-internet-radio:+3.3V #PWR?
+U 1 1 5DFD3465
+P 2850 4050
+AR Path="/5DFD3465" Ref="#PWR?"  Part="1" 
+AR Path="/5DB85C19/5DFD3465" Ref="#PWR0107"  Part="1" 
+F 0 "#PWR0107" H 2850 3900 50  0001 C CNN
+F 1 "+3.3V" H 2865 4223 50  0000 C CNN
+F 2 "" H 2850 4050 50  0000 C CNN
+F 3 "" H 2850 4050 50  0000 C CNN
+	1    2850 4050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2650 4350 2850 4350
+Wire Wire Line
+	2650 4050 2850 4050
+$Comp
+L Device:C C24
+U 1 1 5DFCEEB1
+P 3000 4200
+F 0 "C24" H 3115 4246 50  0000 L CNN
+F 1 "100n" H 3115 4155 50  0000 L CNN
+F 2 "" H 3038 4050 50  0001 C CNN
+F 3 "~" H 3000 4200 50  0001 C CNN
+	1    3000 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C22
+U 1 1 5DFCEAA0
+P 2650 4200
+F 0 "C22" H 2765 4246 50  0000 L CNN
+F 1 "10u" H 2765 4155 50  0000 L CNN
+F 2 "" H 2688 4050 50  0001 C CNN
+F 3 "~" H 2650 4200 50  0001 C CNN
+	1    2650 4200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2600 3550 4150 3550
+Wire Wire Line
+	2600 3550 2600 1550
 $EndSCHEMATC
