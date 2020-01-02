@@ -41,7 +41,7 @@
 #include "Lemon_VS1053.h"
 #include "SPIRingBuffer.h"
 #include "PushButtonClicks.h"
-#include "Station.h"
+#include "Groups.h"
 #include "credentials.h"
 
 const char programName[] = "Internet-Radio-Module";
@@ -66,10 +66,35 @@ SPIRingBuffer ringBuffer(RAMCS);
 // with the microcontroller pin number it is connected to
 const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+long blinkTime = 0;
+long currentTime = 0;
+boolean blankDisplay = true;
 
 // The control push button used to change the stations
 PushButton controlButton;
 const int controlButtonPin = 14;
+
+// Button states
+const int NOTHING      = 0; //Nothing or Bounce
+const int HOLD        =  1; // Pressed and not released for a long time
+const int LONG_PRESS  =  2; // Pressed and released after a long time
+const int CLICK        = 3; // A single click
+const int DOUBLE_CLICK = 4;
+const int TRIPLE_CLICK = 5;
+const int FOUR_CLICKS  = 6;
+const int FIVE_CLICKS  = 7;
+
+// The station selection states
+enum SelectionState {STATION_SELECT, GROUP_SELECT} selectionState;
+
+// The display bufer used for scolling text tciker tape style
+const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
+const int SPACING = 2; // Number characters used to seperate strings in
+                       // a ticker tape style diplay
+const int ROLL_DISPLAY_TIME = 350; // How quickly the display is rolled in ms
+int scrollTime;
+char displayBuffer[DISPLAY_BUFFER_LEN + 1];
+int tickerTapeStep = 0;
 
 // Flag to ensure that the ring buffer is fully loaded on startup
 bool bufferInitialized = false;
@@ -98,10 +123,26 @@ const char* password = WIFI_PWD;
 //String stationName = "RPR1 80s";
 //String station= "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"; // SWR3 - 128kbs
 
-const int NUMBER_STATIONS = 11;
+/*const int NUMBER_STATIONS = 11;
 Station* stations[NUMBER_STATIONS];
 // The index of the station currently playing
 int currentStation;
+*/
+const int maxPayloadLength = 1000;
+const int maxNumberStationsInGroup = 10;
+const int maxNumberGroups = 10;
+
+struct Payload {
+  char* pDataBuffer;
+  int length;
+} payload;
+
+// The structure containing the groups and the stations
+Groups* groups;
+Group* currentGroup;
+Station* currentStation;
+
+
 
 // Create a buffer  to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
 // is the amount that can be transfered to the VS1053 in one SPI operation.
@@ -118,12 +159,20 @@ WiFiClient * stream;
 // Default setting for the tone control
 int toneControl = 0;
 
+// Inhibits the loop from further processing if there was
+// a failure with the setup
+boolean setupFailure = false;
+
 
 // Function prototypes
 void handleRedirect();
 void handleOtherCode(int);
-void loadStations();
-void setStation(int);
+//void loadStations();
+void setStation();
+void initializeGroupStructure();
+void readStationConfiguration();
+void clearDisplayLine(int);
+void tickerTape(int, char*, int, char*, int, int);
 
 
 void setup() {
@@ -152,6 +201,7 @@ void setup() {
   delay(1);
 
   // Load  the stations
+  /*
   Serial.println("Loading stations");
   Serial.flush();
   loadStations();
@@ -161,7 +211,7 @@ void setup() {
     Serial.println(stations[i]->getURL());
   }
   Serial.println("Stations loaded");
-
+*/
 
   // Initialise the ring buffer
   ringBuffer.begin();
@@ -190,11 +240,11 @@ void setup() {
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
 
     // Wait for WiFi connection
-    const int MAX_CONNECTION_ATTEMPTS = 50;
+    const int MAX_CONNECTION_ATTEMPTS = 5;
     int nAttempts = 0;
     while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
-      //Serial.print(".");
-      delay(50);
+      Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
+      delay(300);
       nAttempts++;
 
     }
@@ -204,6 +254,7 @@ void setup() {
        Serial.print(MAX_CONNECTION_ATTEMPTS);
        Serial.println(" attempts!");
        printLCD("FAILED to", "connect to WiFi");
+       setupFailure = true;
     } else {
        Serial.print("Connected to WIFI AP");
        printLCD("Connected to", "WiFi");
@@ -211,8 +262,18 @@ void setup() {
 
     // Set the initial station
     // TODO Read the last station set from the EEPROM
-    setStation(1);
+    initializeGroupStructure();
+    
+    if((WiFiMulti.run() == WL_CONNECTED)) {
+       lcd.clear();
+       lcd.print("Connected to WIFI");
+       readStationConfiguration();
+       setStation();
 
+    }
+
+    // Set all timing variables to now
+    scrollTime = currentTime = blinkTime = millis();
 
 }
 
@@ -220,7 +281,12 @@ void loop() {
   int nRead = 0;
   int maxBytesToRead;
 
+  // If there has been a failure in the setup then 
+  // just return
+  if (setupFailure) return;
+
   // See if we have to change the station
+  /*
   if(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin)) == 3 ) {  //  Control button clicked
     // change station
     currentStation++;
@@ -230,8 +296,47 @@ void loop() {
     bufferInitialized = false;
     ringBuffer.begin();
   }
+  */
+  switch(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin))) {
+    case HOLD : // Toggle the selection state between group selection and stations selection;
+             // Blick the group name and clear the station (second) line.
+             if (selectionState == STATION_SELECT) selectionState = GROUP_SELECT;
+             else {
+               selectionState = STATION_SELECT;
+               displayCurrentGroup();
+               displayCurrentStation();
+             }
+             break;
+    case CLICK :
+              if (selectionState == GROUP_SELECT) {
+                changeGroup();
+                displayCurrentGroup();
+                displayCurrentStation();
+              } else {  // Station select
+                // Reinitialise the  buffer?
+                bufferInitialized = false;
+                ringBuffer.begin();
+                changeStation();
+                setStation();
+                displayCurrentStation();
+              }
+             break;
+    default: break; // Ignore other button selectionStates
+ }
+ // Determine how the groups of station is displayed when it can be changed
+ if (selectionState == GROUP_SELECT) {
+  blinkGroup();
+ }
 
+ 
 
+ // Now check if the station length is longer than 16
+ if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
+   rollStationDisplay();
+ }
+ 
+
+ 
   if (!bufferInitialized) {
     // Load up the buffer
     nBytes = stream->available();
@@ -259,6 +364,8 @@ void loop() {
     }
 
   }   // -- if bufferInitialized
+
+  
 
   // Adding data to buffer
   // is ring buffer full?
@@ -306,6 +413,187 @@ void loop() {
 
 }
 
+void initializeGroupStructure() {
+   groups = new Groups(maxNumberStationsInGroup, maxNumberGroups);
+}
+
+void readStationConfiguration() {
+  HTTPClient http;
+
+
+  Serial.print("[HTTP] begin...\n");
+  lcd.clear();
+  lcd.write("Reading stations");
+  // configure station server  url
+  //http.begin("https://www.howsmyssl.com/a/check", ca); //HTTPS
+  http.begin("http://www.andrew-doble.homepage.t-online.de/ir/stations.txt"); //HTTP
+
+  Serial.print("[HTTP] GET...\n");
+  // start connection and send HTTP header
+  int httpCode = http.GET();
+
+  // httpCode will be negative on error
+  if(httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+
+      // file found at server
+      if(httpCode == HTTP_CODE_OK) {
+          String payloadString = http.getString();
+
+          // Copy the payload into a char array for further manipulation
+          payload.length = payloadString.length();
+
+          payload.pDataBuffer = new char[payload.length];
+          //payloadString.toCharArray(payload.pDataBuffer, maxPayloadLength);
+          payloadString.toCharArray(payload.pDataBuffer, payload.length);
+
+          groups->setup(payload.pDataBuffer, payload.length);
+
+          // Print out the group and station structure
+          groups->begin();
+        	Group* group;
+            while ((group = groups->next()) != NULL) {
+            	Serial.println(group->getName());
+
+            	group->begin();
+            	Station* station;
+            	while ((station = group->next()) != NULL) {
+            		Serial.print("    ");
+                Serial.print(station->getName());
+                Serial.print(",");
+                Serial.print(station->getURL());
+                Serial.println();
+
+            	}
+            }
+
+      // Set the LCD to the first group and station
+      if (groups == NULL) Serial.println("PANIC A");
+      groups->begin();
+      currentGroup = groups->next();
+      if (currentGroup == NULL)  Serial.println("PANIC B");
+
+      lcd.clear();
+      lcd.print(currentGroup->getName());
+      currentGroup->begin();
+      currentStation = currentGroup->next();
+      if (currentStation == NULL)  Serial.println("PANIC C");
+      lcd.setCursor(0,1);
+      lcd.print(currentStation->getName());
+  }
+  } else {
+      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  http.end();
+}
+void displayCurrentGroup() {
+  clearDisplayLine(0);
+  if (currentGroup != NULL) {
+    lcd.setCursor(0,0);
+    lcd.print(currentGroup->getName());
+  }
+  displayCurrentStation();
+}
+
+void displayCurrentStation() {
+  if (currentStation == NULL) {
+    currentGroup->begin();
+    currentStation = currentGroup->next();
+  }
+  if (currentStation != NULL) {
+    clearDisplayLine(1);
+    lcd.setCursor(0,1);
+    lcd.print(currentStation->getName());
+  }
+}
+
+void changeStation() {
+  currentStation = currentGroup->next();
+  if (currentStation == NULL) {
+    currentGroup->begin();
+    currentStation = currentGroup->next();
+  }
+  if (currentGroup == NULL) Serial.println("PANIC GROUP");
+  if (currentStation == NULL) Serial.println("PANIC STATION");
+
+  // Reset any ticker tape state
+  tickerTapeStep = 0;
+}
+
+void changeGroup() {
+  currentGroup = groups->next();
+  if (currentGroup == NULL) {  // Cycle through the groups
+   groups->begin();
+   currentGroup = groups->next();
+  }
+
+  // Set and display the first station in the group
+  currentGroup->begin();
+  currentStation = currentGroup->next();
+}
+
+
+void rollStationDisplay() {
+   if ((millis() - scrollTime) > ROLL_DISPLAY_TIME) {  // Time to roll the display,
+     tickerTape(tickerTapeStep, currentStation->getName(), strlen(currentStation->getName()), displayBuffer, DISPLAY_BUFFER_LEN, SPACING);
+     lcd.setCursor(0,1);
+     lcd.print(displayBuffer);
+     tickerTapeStep++;
+     if (tickerTapeStep == (DISPLAY_BUFFER_LEN + SPACING - 1)) tickerTapeStep = 0;
+     scrollTime = millis();
+  }
+}
+
+void blinkGroup() {
+  lcd.setCursor(0,1);
+  lcd.print("                "); // Clear the station details
+  currentTime = millis();
+  if (currentTime > blinkTime) {
+    // Set the blink time to the future
+    blinkTime = currentTime + 500;
+    if (blankDisplay) {
+      lcd.setCursor(0,0);
+      lcd.print("                ");
+      blankDisplay = false;
+    } else {
+      lcd.setCursor(0,0);
+      if (currentGroup == NULL) Serial.println("PANIC HERE");
+      lcd.print(currentGroup->getName());
+      blankDisplay = true;
+    }
+  }
+}
+
+// Step < length of display
+void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int displayLength, int spacing) {
+  int pos;
+
+  for (int i=0; i< displayLength; i++) {
+    pos = rollStep + i;
+    if (pos >= 0 && pos < textLen) {
+
+        displayBuffer[i] = text[pos];
+    }
+    if (pos >= textLen && pos < (textLen + spacing)) {
+        displayBuffer[i] = ' ';
+    }
+    if (pos >= (textLen + spacing)) {
+        displayBuffer[i] = text[pos%(textLen + spacing)];
+    }
+    // Make sure the string terminator is in place
+    displayBuffer[DISPLAY_BUFFER_LEN] = '\0';
+  }
+}
+
+ void clearDisplayLine(int line) {
+   if (line < 2) {
+    lcd.setCursor(0, line);
+    lcd.print("                ");
+   }
+ }
 
 
 /*
@@ -353,7 +641,7 @@ void handleRedirect() {
 
 /* Set the station.
 */
-void setStation(int stationId) {
+void setStation() {
 
   // Disconnect if already connected
   if (http.connected()) {
@@ -362,15 +650,15 @@ void setStation(int stationId) {
   }
 
   Serial.print("[HTTP] begin connection to ");
-  Serial.print(stations[stationId]->getName());
+  Serial.print(currentStation->getName());
   Serial.println(" ...");
 
 
   // Configure server and url
-  http.begin(stations[stationId]->getURL());
+  http.begin(currentStation->getURL());
 
   Serial.print("[HTTP] GET...\n");
-  printLCD("Connecting to", stations[stationId]->getName());
+  printLCD("Connecting to", currentStation->getName());
   // start connection and send HTTP header
   int httpCode = http.GET();
   if(httpCode > 0) {
@@ -390,7 +678,7 @@ void setStation(int stationId) {
            handleRedirect();
            break;
         default:
-          // HTTP cde retuned that cannot be handled
+          // HTTP cde returned that cannot be handled
           handleOtherCode(httpCode);
           break;
 
@@ -401,6 +689,9 @@ void setStation(int stationId) {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 }
+
+
+
 /*
  *  Handles other HTTP codes
  *
@@ -413,6 +704,7 @@ void handleOtherCode(int httpCode) {
 }
 
 // TO DO replace
+/*
 void loadStations() {
 
   stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
@@ -430,6 +722,7 @@ void loadStations() {
 
 
  }
+ */
 
 /* Utility function to write to the LCD display.
  * line1 The top line of the LCD display.
