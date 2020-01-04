@@ -87,6 +87,12 @@ const int FIVE_CLICKS  = 7;
 // The station selection states
 enum SelectionState {STATION_SELECT, GROUP_SELECT} selectionState;
 
+// Line 0 of the LCD display is used as either the status display 
+// or to display the name of the currently selected group. 
+// To handle this correctly, keep a track of what is being displayed.
+enum StatusDisplayState  {NONE, GROUP, CONNECT};
+StatusDisplayState statusDisplayState = NONE; 
+
 // The display bufer used for scolling text tciker tape style
 const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
 const int SPACING = 2; // Number characters used to seperate strings in
@@ -233,18 +239,24 @@ void setup() {
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");
-    printLCD("Connecting to", "WiFi");
+    displayConnecting(); 
+    lcd.setCursor(0,1);
+    lcd.print( "WiFi");
 
 
 
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
 
     // Wait for WiFi connection
-    const int MAX_CONNECTION_ATTEMPTS = 5;
+    // Using a large number of connection attempts
+    // with a short interval between them seems
+    // to ensure that a connection is (almost) 
+    // always made.
+    const int MAX_CONNECTION_ATTEMPTS = 50;
     int nAttempts = 0;
     while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
       Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
-      delay(300);
+      delay(50);
       nAttempts++;
 
     }
@@ -319,6 +331,8 @@ void loop() {
                 changeStation();
                 setStation();
                 displayCurrentStation();
+                
+          
               }
              break;
     default: break; // Ignore other button selectionStates
@@ -335,8 +349,7 @@ void loop() {
    rollStationDisplay();
  }
  
-
- 
+         
   if (!bufferInitialized) {
     // Load up the buffer
     nBytes = stream->available();
@@ -365,9 +378,12 @@ void loop() {
 
   }   // -- if bufferInitialized
 
-  
+  if (bufferInitialized && (statusDisplayState != GROUP)) {
+    displayCurrentGroup();
+  }
+ 
 
-  // Adding data to buffer
+  // Adding data to ring buffer
   // is ring buffer full?
   //    no:   is source data available?
   //            yes: read source, data --> ring buffer
@@ -495,6 +511,7 @@ void displayCurrentGroup() {
     lcd.setCursor(0,0);
     lcd.print(currentGroup->getName());
   }
+  statusDisplayState = GROUP; 
   displayCurrentStation();
 }
 
@@ -508,6 +525,13 @@ void displayCurrentStation() {
     lcd.setCursor(0,1);
     lcd.print(currentStation->getName());
   }
+}
+
+void displayConnecting() {
+  clearDisplayLine(0); 
+  lcd.setCursor(0,0);
+  lcd.print("Connecting to");
+  statusDisplayState = CONNECT;
 }
 
 void changeStation() {
@@ -658,7 +682,9 @@ void setStation() {
   http.begin(currentStation->getURL());
 
   Serial.print("[HTTP] GET...\n");
-  printLCD("Connecting to", currentStation->getName());
+  //printLCD("Connecting to", currentStation->getName());
+  displayConnecting(); 
+  displayCurrentStation(); 
   // start connection and send HTTP header
   int httpCode = http.GET();
   if(httpCode > 0) {
