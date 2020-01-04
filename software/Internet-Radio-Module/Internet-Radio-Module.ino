@@ -121,19 +121,7 @@ HTTPClient http;
 const char* ssid     = WIFI_SSID;
 const char* password = WIFI_PWD;
 
-// Web page to access
-//String station= "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3";   // RPR1   128kps
-//String stationName = "RPR1";
-//String station= "http://217.151.151.90:80/rpr-80er-128-mp3";   // RPR1   128kps
-//String station= "http://streams.rpr1.de/rpr-80er-128-mp3";   // RPR1 Best of the 80s - 128kbs
-//String stationName = "RPR1 80s";
-//String station= "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"; // SWR3 - 128kbs
-
-/*const int NUMBER_STATIONS = 11;
-Station* stations[NUMBER_STATIONS];
-// The index of the station currently playing
-int currentStation;
-*/
+// Dimensions of the station group data structure
 const int maxPayloadLength = 1000;
 const int maxNumberStationsInGroup = 10;
 const int maxNumberGroups = 10;
@@ -173,7 +161,6 @@ boolean setupFailure = false;
 // Function prototypes
 void handleRedirect();
 void handleOtherCode(int);
-//void loadStations();
 void setStation();
 void initializeGroupStructure();
 void readStationConfiguration();
@@ -205,19 +192,6 @@ void setup() {
   pinMode(RAMCS, OUTPUT);
   digitalWrite(RAMCS, HIGH);
   delay(1);
-
-  // Load  the stations
-  /*
-  Serial.println("Loading stations");
-  Serial.flush();
-  loadStations();
-  for (int i=0; i < NUMBER_STATIONS; i++) {
-    Serial.print(stations[i]->getName());
-    Serial.print(" ");
-    Serial.println(stations[i]->getURL());
-  }
-  Serial.println("Stations loaded");
-*/
 
   // Initialise the ring buffer
   ringBuffer.begin();
@@ -298,17 +272,6 @@ void loop() {
   if (setupFailure) return;
 
   // See if we have to change the station
-  /*
-  if(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin)) == 3 ) {  //  Control button clicked
-    // change station
-    currentStation++;
-    if (currentStation > NUMBER_STATIONS - 1) currentStation = 0;
-    setStation(currentStation);
-    // Reinitialise the  buffer
-    bufferInitialized = false;
-    ringBuffer.begin();
-  }
-  */
   switch(controlButton.buttonCheck(millis(), digitalRead(controlButtonPin))) {
     case HOLD : // Toggle the selection state between group selection and stations selection;
              // Blick the group name and clear the station (second) line.
@@ -336,18 +299,18 @@ void loop() {
               }
              break;
     default: break; // Ignore other button selectionStates
- }
- // Determine how the groups of station is displayed when it can be changed
- if (selectionState == GROUP_SELECT) {
-  blinkGroup();
- }
+   }
+ 
+   // Determine how the groups of station is displayed when it can be changed
+   if (selectionState == GROUP_SELECT) {
+    blinkGroup();
+   }
 
  
-
- // Now check if the station length is longer than 16
- if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
-   rollStationDisplay();
- }
+   // Now check if the station length is longer than 16
+   if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
+     rollStationDisplay();
+   }
  
          
   if (!bufferInitialized) {
@@ -729,26 +692,6 @@ void handleOtherCode(int httpCode) {
 
 }
 
-// TO DO replace
-/*
-void loadStations() {
-
-  stations[0] = new Station("RPR1", "http://streams.rpr1.de/rpr-kaiserslautern-128-mp3");
-  stations[1] = new Station("RPR1 Best of the 80s", "http://streams.rpr1.de/rpr-80er-128-mp3");
-  stations[2] = new Station("SWR3", "https://dg-swr-https-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3");
-  stations[3] = new Station("BBC Radio 1", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p");
-  stations[4] = new Station("BBC Radio 2", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio2_mf_p");
-  stations[5] = new Station("BBC Radio 3", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio3_mf_p");
-  stations[6] = new Station("BBC Radio 4 FM", "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio4fm_mf_p");
-  stations[7] = new Station("Classical", "http://listen.181fm.com/181-classical_128k.mp3");
-  stations[8] = new Station("Antenne", "http://mp3channels.webradio.antenne.de/antenne");
-  stations[9] = new Station("Smooth Jazz Florida", "http://us4.internet-radio.com:8266/;stream");
-  stations[10] = new Station("WDR3", "http://wdr-edge-2011.dus-lg.cdn.addradio.net/wdr/wdr3/live/mp3/128/stream.mp3");
-
-
-
- }
- */
 
 /* Utility function to write to the LCD display.
  * line1 The top line of the LCD display.
