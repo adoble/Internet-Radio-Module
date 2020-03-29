@@ -48,6 +48,36 @@ D Unpolarized capacitor
 K capacitor cap
 $ENDCMP
 #
+$CMP Conn_01x04
+D Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
+$CMP Conn_01x10
+D Generic connector, single row, 01x10, script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
+$CMP Conn_01x16
+D Generic connector, single row, 01x16, script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
+$CMP Conn_02x05_Top_Bottom
+D Generic connector, double row, 02x05, top/bottom pin numbering scheme (row 1: 1...pins_per_row, row2: pins_per_row+1 ... num_pins), script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
+$CMP Conn_02x15_Top_Bottom
+D Generic connector, double row, 02x15, top/bottom pin numbering scheme (row 1: 1...pins_per_row, row2: pins_per_row+1 ... num_pins), script generated (kicad-library-utils/schlib/autogen/connector/)
+K connector
+F ~
+$ENDCMP
+#
 $CMP Crystal
 D Two pin crystal
 K quartz ceramic resonator oscillator
@@ -60,6 +90,12 @@ $ENDCMP
 #
 $CMP GND
 K POWER, PWR
+$ENDCMP
+#
+$CMP LCD16x2
+D Adafruit LCD 16x2 Alphanumeric 16pin Blue, 8bit parallel, 5V VDD
+K display LCD 7-segment
+F http://www.icbank.com/data/ICBShop/board/HY1602E.pdf
 $ENDCMP
 #
 $CMP R

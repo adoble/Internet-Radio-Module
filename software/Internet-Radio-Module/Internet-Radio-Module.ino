@@ -44,13 +44,15 @@
 #include "Groups.h"
 #include "credentials.h"
 
-const char programName[] = "Internet-Radio-Module";
+const char programName[] = "Internet-Radio-Module 04.01.2020";
 
 // Pin setup for the VS1053
 const int DREQ = 26;
 const int XCS  = 25;
-const int XRST = 35;  //NOTE: The reset jumper on the
+//const int XRST = 35;  // 35 is input only on wroom
+const int XRST = 33;  //NOTE: The reset jumper on the
                       // Adafruit Feather MusicMaker w/Amp needs to be broken
+                      
 const int XDCS = 27;
 
 // Pin setup for the 23LC1024 RAM
@@ -64,7 +66,7 @@ SPIRingBuffer ringBuffer(RAMCS);
 
 // initialize the LCD library by associating any needed LCD interface pins
 // with the microcontroller pin number it is connected to
-const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;
+const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //DIFFERS FROM PCB DESIGN!
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 long blinkTime = 0;
 long currentTime = 0;
@@ -144,7 +146,7 @@ const int DATABUFFERLEN = 32;
 uint8_t mp3Buffer[DATABUFFERLEN];
 int bufferIndex = 0;
 
-// number of byte availble in the read stream
+// Number of bytes available in the read stream
 size_t nBytes;
 
 // Pointer to  the payload stream, i.e. the MP3 data from the internet station.
@@ -195,15 +197,26 @@ void setup() {
 
   // Initialise the ring buffer
   ringBuffer.begin();
+  Serial.println("Ring buffer initialised.");
 
   // Initialize the player
   if ( !player.begin()) { // initialise the player
-     Serial.println("Error in player init!");
+   Serial.println("Error in MP3 codec initialisation!");
      player.dumpRegs();
+  } else {
+     Serial.println("MP3 codec initialised.");
   }
 
+  
+ 
 
-    // Make sure the VS1053 is in MP3 mode. For some this is not the case.
+  if (player.readyForData()) {
+    Serial.println("Ready for data");
+  } else {
+    Serial.println("Not ready for data");
+  }
+    // Make sure the VS1053 is in MP3 mode. 
+    // For some boards this is not the case.
     while (!player.readyForData()) {}
     player.setMP3Mode();
 
@@ -221,7 +234,7 @@ void setup() {
 
     WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
 
-    // Wait for WiFi connection
+    // Wait for WiFi connection.
     // Using a large number of connection attempts
     // with a short interval between them seems
     // to ensure that a connection is (almost) 
@@ -280,22 +293,25 @@ void loop() {
                selectionState = STATION_SELECT;
                displayCurrentGroup();
                displayCurrentStation();
+               // Reinitialise the  buffer
+               bufferInitialized = false;
+               ringBuffer.begin();
+               setStation(); 
              }
              break;
     case CLICK :
               if (selectionState == GROUP_SELECT) {
                 changeGroup();
                 displayCurrentGroup();
+                //setStation(); 
                 displayCurrentStation();
               } else {  // Station select
-                // Reinitialise the  buffer?
+                // Reinitialise the  buffer
                 bufferInitialized = false;
                 ringBuffer.begin();
                 changeStation();
                 setStation();
                 displayCurrentStation();
-                
-          
               }
              break;
     default: break; // Ignore other button selectionStates
@@ -304,6 +320,8 @@ void loop() {
    // Determine how the groups of station is displayed when it can be changed
    if (selectionState == GROUP_SELECT) {
     blinkGroup();
+    // Stop music being played whilst the group is being selected
+    return; 
    }
 
  
@@ -517,7 +535,7 @@ void changeGroup() {
    currentGroup = groups->next();
   }
 
-  // Set and display the first station in the group
+  // Set the first station in the group
   currentGroup->begin();
   currentStation = currentGroup->next();
 }

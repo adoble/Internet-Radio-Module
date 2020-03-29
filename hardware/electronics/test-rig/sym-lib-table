@@ -28,4 +28,5 @@
   (lib (name Switch1)(type Legacy)(uri C:/Users/Andrew/Documents/Projects/Modular-Audio/Internet-Radio-Module/hardware/electronics/library/Switch.lib)(options "")(descr ""))
   (lib (name Connector1)(type Legacy)(uri C:/Users/Andrew/Documents/Projects/Modular-Audio/Internet-Radio-Module/hardware/electronics/library/Connector.lib)(options "")(descr ""))
   (lib (name Regulator_Linear1)(type Legacy)(uri C:/Users/Andrew/Documents/Projects/Modular-Audio/Internet-Radio-Module/hardware/electronics/library/Regulator_Linear.lib)(options "")(descr ""))
+  (lib (name test-rig-rescue)(type Legacy)(uri ${KIPRJMOD}/test-rig-rescue.lib)(options "")(descr ""))
 )

@@ -8,7 +8,7 @@
 #define WRITE 0x02
 
 // SRAM Hold disable bit.
-//#define HOLD_DISABLE 1   // NOt for 24LC10924
+//#define HOLD_DISABLE 1   // NOt for 24LC1024
 
 // SRAM byte mode
 //#define BYTE_MODE (0x00 | HOLD_DISABLE)

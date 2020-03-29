@@ -1,12 +1,12 @@
 RPR1,http://streams.rpr1.de/rpr-kaiserslautern-128-mp3,Favorites,German
 RPR1 Best of the 80s,http://streams.rpr1.de/rpr-80er-128-mp3,Favorites,German
-SWR3,https://swr-edge-10b9-fra-dtag-cdn.sslcast.addradio.de/swr/swr3/live/mp3/128/stream.mp3,Favorites,German
+SWR3,https://swr-edge-10b5-fra-dtag-cdn.cast.addradio.de/swr/swr3/live/mp3/128/stream.mp3,Favorites,German
 BBC Radio 1,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio1_mf_p,UK
 BBC Radio 2,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio2_mf_p,UK
 BBC Radio 3,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio3_mf_p,UK
 BBC Radio 4 FM,http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio4fm_mf_p,UK,Favorites
 Classical,http://listen.181fm.com/181-classical_128k.mp3,German
 Antenne,http://mp3channels.webradio.antenne.de/antenne,German
-FIP autour du rock,http://chai5she.cdn.dvmr.fr:80/fip-webradio1.mp3,French
+NRJ,https://scdn.nrjaudio.fm/fr/30001/aac_64.mp3?cdn_path=audio_lbs8,French
 WDR3,http://wdr-wdr3-live.icecast.wdr.de/wdr/wdr3/live/mp3/128/stream.mp3,German
 NRJ Berlin,http://185.52.127.157/de/33001/mp3_128.mp3,German
