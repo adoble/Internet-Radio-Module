@@ -66,7 +66,8 @@ SPIRingBuffer ringBuffer(RAMCS);
 
 // initialize the LCD library by associating any needed LCD interface pins
 // with the microcontroller pin number it is connected to
-const int rs = 16, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //DIFFERS FROM PCB DESIGN!
+//const int rs = 12, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //TODO: CAREFUL, MAY DIFFER FROM PCB DESIGN!
+const int rs = 12, en = 2, d4 = 16, d5 = 4, d6 = 5, d7 = 21;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 long blinkTime = 0;
 long currentTime = 0;
@@ -182,6 +183,8 @@ void setup() {
   // Set up the control button to change te stations
   pinMode(controlButtonPin, INPUT_PULLUP);
 
+ 
+
   // set up the LCD with the  number of columns and rows
   lcd.begin(16, 2);
 
@@ -222,7 +225,7 @@ void setup() {
 
     // Set the volume
     while (!player.readyForData()) {}
-    player.setVolume(25,25);  // Higher is quieter.
+    player.setVolume(40,40);  // Higher is quieter.
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");

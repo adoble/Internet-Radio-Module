@@ -23,22 +23,42 @@
 */
 
 
-const int LED_PIN = 25;
+//const int LED_PIN = 25;
+const int LED_PIN = 14;
+
+const int rs = 12, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //DIFFERS FROM PCB DESIGN!
+int pins[] = {rs, en, d4, d5 , d6, d7}; 
 
 
 // the setup function runs once when you press reset or power the board
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
-  pinMode(LED_PIN, OUTPUT);
+  //pinMode(LED_PIN, OUTPUT);
+
+  for (int i = 0; i < 6; i++) {
+    pinMode(pins[i], OUTPUT);
+  }
 
   Serial.begin(115200);
+
+ 
 }
 
 // the loop function runs over and over again forever
 void loop() {
   Serial.println("Blink");
-  digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  //digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  for (int i = 0; i < 6; i++) {
+    digitalWrite(pins[i], HIGH);   
+  }
+  
   delay(100);                       // wait for a second
-  digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
+  //digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
+  for (int i = 0; i < 6; i++) {
+    digitalWrite(pins[i], LOW);   
+  }
+ 
   delay(100);                       // wait for a second
+
+
 }
