@@ -52,7 +52,7 @@ const int XCS  = 25;
 //const int XRST = 35;  // 35 is input only on wroom
 const int XRST = 33;  //NOTE: The reset jumper on the
                       // Adafruit Feather MusicMaker w/Amp needs to be broken
-                      
+
 const int XDCS = 27;
 
 // Pin setup for the 23LC1024 RAM
@@ -90,11 +90,11 @@ const int FIVE_CLICKS  = 7;
 // The station selection states
 enum SelectionState {STATION_SELECT, GROUP_SELECT} selectionState;
 
-// Line 0 of the LCD display is used as either the status display 
-// or to display the name of the currently selected group. 
+// Line 0 of the LCD display is used as either the status display
+// or to display the name of the currently selected group.
 // To handle this correctly, keep a track of what is being displayed.
 enum StatusDisplayState  {NONE, GROUP, CONNECT};
-StatusDisplayState statusDisplayState = NONE; 
+StatusDisplayState statusDisplayState = NONE;
 
 // The display bufer used for scolling text tciker tape style
 const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
@@ -139,6 +139,13 @@ Groups* groups;
 Group* currentGroup;
 Station* currentStation;
 
+struct URL {
+  String protocol = "";
+  String host = "";
+  String port = "";
+  String path = "";
+};
+
 
 
 // Create a buffer  to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
@@ -150,8 +157,8 @@ int bufferIndex = 0;
 // Number of bytes available in the read stream
 size_t nBytes;
 
-// Pointer to  the payload stream, i.e. the MP3 data from the internet station.
-WiFiClient * stream;
+// Client to read the mp3 data from the internet station.
+WiFiClient client;
 
 // Default setting for the tone control
 int toneControl = 0;
@@ -169,6 +176,8 @@ void initializeGroupStructure();
 void readStationConfiguration();
 void clearDisplayLine(int);
 void tickerTape(int, char*, int, char*, int, int);
+int connectStation(String);
+void parseURL(String, URL*);
 
 
 void setup() {
@@ -183,7 +192,7 @@ void setup() {
   // Set up the control button to change te stations
   pinMode(controlButtonPin, INPUT_PULLUP);
 
- 
+
 
   // set up the LCD with the  number of columns and rows
   lcd.begin(16, 2);
@@ -210,15 +219,15 @@ void setup() {
      Serial.println("MP3 codec initialised.");
   }
 
-  
- 
+
+
 
   if (player.readyForData()) {
     Serial.println("Ready for data");
   } else {
     Serial.println("Not ready for data");
   }
-    // Make sure the VS1053 is in MP3 mode. 
+    // Make sure the VS1053 is in MP3 mode.
     // For some boards this is not the case.
     while (!player.readyForData()) {}
     player.setMP3Mode();
@@ -229,7 +238,7 @@ void setup() {
 
     // Connect to the WIFI access point
     Serial.println("Attempting to connect to WIFI AP");
-    displayConnecting(); 
+    displayConnecting();
     lcd.setCursor(0,1);
     lcd.print( "WiFi");
 
@@ -240,7 +249,7 @@ void setup() {
     // Wait for WiFi connection.
     // Using a large number of connection attempts
     // with a short interval between them seems
-    // to ensure that a connection is (almost) 
+    // to ensure that a connection is (almost)
     // always made.
     const int MAX_CONNECTION_ATTEMPTS = 50;
     int nAttempts = 0;
@@ -265,7 +274,7 @@ void setup() {
     // Set the initial station
     // TODO Read the last station set from the EEPROM
     initializeGroupStructure();
-    
+
     if((WiFiMulti.run() == WL_CONNECTED)) {
        lcd.clear();
        lcd.print("Connected to WIFI");
@@ -283,7 +292,7 @@ void loop() {
   int nRead = 0;
   int maxBytesToRead;
 
-  // If there has been a failure in the setup then 
+  // If there has been a failure in the setup then
   // just return
   if (setupFailure) return;
 
@@ -299,14 +308,14 @@ void loop() {
                // Reinitialise the  buffer
                bufferInitialized = false;
                ringBuffer.begin();
-               setStation(); 
+               setStation();
              }
              break;
     case CLICK :
               if (selectionState == GROUP_SELECT) {
                 changeGroup();
                 displayCurrentGroup();
-                //setStation(); 
+                //setStation();
                 displayCurrentStation();
               } else {  // Station select
                 // Reinitialise the  buffer
@@ -319,24 +328,24 @@ void loop() {
              break;
     default: break; // Ignore other button selectionStates
    }
- 
+
    // Determine how the groups of station is displayed when it can be changed
    if (selectionState == GROUP_SELECT) {
     blinkGroup();
     // Stop music being played whilst the group is being selected
-    return; 
+    return;
    }
 
- 
+
    // Now check if the station length is longer than 16
    if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
      rollStationDisplay();
    }
- 
-         
+
+
   if (!bufferInitialized) {
     // Load up the buffer
-    nBytes = stream->available();
+    nBytes = client.available();
     if (nBytes) {
       // read in chunks of up to 32 bytes
 
@@ -348,7 +357,7 @@ void loop() {
 
       if (ringBuffer.availableSpace() < DATABUFFERLEN) maxBytesToRead = ringBuffer.availableSpace();
       else maxBytesToRead = (nBytes> DATABUFFERLEN ? DATABUFFERLEN : nBytes);
-      nRead = stream->readBytes(mp3Buffer, maxBytesToRead);
+      nRead = client.readBytes(mp3Buffer, maxBytesToRead);
       // Transfer to buffer
       for (int i = 0; i < nRead; i++) {
         ringBuffer.put(mp3Buffer[i]);
@@ -365,7 +374,7 @@ void loop() {
   if (bufferInitialized && (statusDisplayState != GROUP)) {
     displayCurrentGroup();
   }
- 
+
 
   // Adding data to ring buffer
   // is ring buffer full?
@@ -376,10 +385,10 @@ void loop() {
   //
   if (bufferInitialized) {
     if (ringBuffer.availableSpace() > DATABUFFERLEN) {
-      nBytes = stream->available();
+      nBytes = client.available();
       if (nBytes) {
         // read up to 32 bytes
-        nRead = stream->readBytes(mp3Buffer, (nBytes> DATABUFFERLEN ? DATABUFFERLEN : nBytes));
+        nRead = client.readBytes(mp3Buffer, (nBytes> DATABUFFERLEN ? DATABUFFERLEN : nBytes));
         // Transfer to buffer
         for (int i = 0; i < nRead; i++) {
           ringBuffer.put(mp3Buffer[i]);
@@ -495,7 +504,7 @@ void displayCurrentGroup() {
     lcd.setCursor(0,0);
     lcd.print(currentGroup->getName());
   }
-  statusDisplayState = GROUP; 
+  statusDisplayState = GROUP;
   displayCurrentStation();
 }
 
@@ -512,7 +521,7 @@ void displayCurrentStation() {
 }
 
 void displayConnecting() {
-  clearDisplayLine(0); 
+  clearDisplayLine(0);
   lcd.setCursor(0,0);
   lcd.print("Connecting to");
   statusDisplayState = CONNECT;
@@ -652,52 +661,62 @@ void handleRedirect() {
 void setStation() {
 
   // Disconnect if already connected
-  if (http.connected()) {
-    http.end();
-    Serial.println("[HTTP] disconnect");
+  if (client.connected()) {
+    client.stop();
   }
 
   Serial.print("[HTTP] begin connection to ");
   Serial.print(currentStation->getName());
   Serial.println(" ...");
 
+  displayConnecting();
+  displayCurrentStation();
 
-  // Configure server and url
-  http.begin(currentStation->getURL());
+  // Connect to the server and any headers
+  int httpCode = connectStation(currentStation->getURL());
+  //TODO it is not so transparent that the above  sets up the wifi client
 
-  Serial.print("[HTTP] GET...\n");
-  //printLCD("Connecting to", currentStation->getName());
-  displayConnecting(); 
-  displayCurrentStation(); 
-  // start connection and send HTTP header
-  int httpCode = http.GET();
-  if(httpCode > 0) {
-      // HTTP header has been send and Server response header has been handled
-      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+  // HTTP header has been send and Server response header has been handled
+  Serial.printf("[HTTP] GET... code: %d\n", httpCode);
 
-      // file found at server
-      switch (httpCode) {
-        case HTTP_CODE_OK:
-          // get tcp stream of payload
-          stream = http.getStreamPtr();
-          break;
-        case HTTP_CODE_TEMPORARY_REDIRECT:
-           handleRedirect();
-           break;
-        case HTTP_CODE_PERMANENT_REDIRECT:
-           handleRedirect();
-           break;
-        default:
-          // HTTP cde returned that cannot be handled
-          handleOtherCode(httpCode);
-          break;
+  // file found at server
+  // TODO rewrite!!
+  switch (httpCode) {
+    case HTTP_CODE_OK:
+      // get tcp stream of payload
+      //stream = http.getStreamPtr();
+      break;
+    case HTTP_CODE_TEMPORARY_REDIRECT:
+       handleRedirect();
+       break;
+    case HTTP_CODE_PERMANENT_REDIRECT:
+       handleRedirect();
+       break;
+       case HTTPC_ERROR_NO_HTTP_SERVER:
+//         // Certain stations (such as the BBC !!!) do not send an HTTP
+//         // response header back leading to this error. In this case,
+//         // just get the MP3 stream over a TCP connection
+//         Serial.println("HTTPC_ERROR_NO_HTTP_SERVER"); // TODO
+//         //char* nonHTTPHost = currentStation->getURL()+ 7;
+//         Serial.print("NON HTTP HOST:");
+//         Serial.println(currentStation->getURL()+ 7);
+//
+//         if (!stream->connect(currentStation->getURL()+ 7, 80)) {
+//
+//         //if (!stream->connect(currentStation->getURL(), 80)) {
+//          Serial.println("Connection failed - do something better here");
+//         }
 
-      } // switch httpCode
-  }
-  else {
-      // TODO replace this with the general error handling
-      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-  }
+
+         break;
+    default:
+      // HTTP code returned that cannot be handled
+      handleOtherCode(httpCode);
+      break;
+
+  } // switch httpCode
+
+
 }
 
 
@@ -708,8 +727,15 @@ void setStation() {
  */
 void handleOtherCode(int httpCode) {
   // TODO as part of the general error handling
-  Serial.print("Cannot handle this HTTP code:");
-  Serial.println(httpCode);
+  Serial.printf("[HTTP] GET... failed, error[%d]: %s\n", httpCode, http.errorToString(httpCode).c_str());
+
+  String msg = "";
+  msg.concat("Error Code:");
+  String msgCode = String(httpCode);
+  msg.concat(msgCode);
+  Serial.print("MSG: "); Serial.println(msg);
+
+  printLCD("ERROR - Get Help!", msg);
 
 }
 
@@ -725,4 +751,128 @@ void printLCD(String line1, String line2) {
   lcd.setCursor(0,1);
   lcd.print(line2);
 
+}
+
+/**
+* Connect to the station specified by the urlString.
+* Returns the HTTP response code
+*/
+int connectStation(String urlString) {
+  URL url;
+
+//TEST
+//  parseURL("http://stations.com/streaming/music.mp3", &url);
+//  printURL(&url);
+//  parseURL("http://domain.stations.com/channels/pop/more_music", &url);
+//  printURL(&url);
+//  parseURL("http://domain.stations.com:80/x/more_music.mp3", &url);
+//  printURL(&url);
+//
+//  return -1000;
+//
+  parseURL(urlString, &url);
+
+
+  int httpPort;
+  if (url.port.length() == 0) httpPort =  80;
+  else httpPort = url.port.toInt();
+
+  if (!client.connect(url.host.c_str(), httpPort)) {
+      Serial.println("Connection failed");
+      return -2;  //TODO Failed to connect
+  }
+
+  // We now create a URI for the request
+  //String url = requestURI;
+
+
+  Serial.print("Requesting URL: ");
+  //printURL(&url);
+
+  // This will send the request to the server
+  client.print(String("GET ") + url.path + " HTTP/1.1\r\n" +
+               "Host: " + url.host + "\r\n" +
+               "Connection: keep-alive\r\n\r\n");
+
+  unsigned long timeout = millis();
+  while (client.available() == 0) {
+      if (millis() - timeout > 5000) {
+          Serial.println("ERROR: Timeout!");
+          client.stop();
+          return -1;  //TODO timeout
+      }
+  }
+
+  // Now read the response code.
+  String protocol;
+  String responseCode;
+  String headerFields;
+
+  char c;
+  while (client.available() && (c = client.read()) != ' ') {
+    protocol += c;
+  }
+  Serial.print(protocol);
+  Serial.print(' ');
+
+
+   while (client.available() && (c = client.read()) != ' ') {
+    responseCode += c;
+  }
+  Serial.print(responseCode);
+  Serial.print(' ');
+
+
+  int endHeaderCount = 0 ;
+  while (client.available()) {
+    c = client.read();
+    headerFields += c;
+
+    if  (c == '\r' || c == '\n' ) endHeaderCount++;
+    else endHeaderCount = 0;
+
+    if (endHeaderCount == 4) {
+      Serial.println(headerFields);
+      break;
+    }
+  }
+
+  return responseCode.toInt();
+}
+
+void parseURL(String urlString, URL* url) {
+  // Assume a valid URL
+
+  enum URLParseState {PROTOCOL, SEPERATOR, HOST, PORT, PATH} state = PROTOCOL;
+
+  url->protocol = "";
+  url->host = "";
+  url->port = "";
+  url->path = "/";
+
+
+  for (int i = 0; i < urlString.length(); i++) {
+    switch(state)
+    {
+      case PROTOCOL: if (urlString[i] == ':') state = SEPERATOR;
+                     else url->protocol += urlString[i];
+                     break;
+      case SEPERATOR: if (urlString[i] != '/') {
+                          state = HOST;
+                          url->host += urlString[i];
+                      }
+                      break;
+      case HOST: if (urlString[i] == ':') state = PORT;
+                 else {
+                   if (urlString[i] == '/') state = PATH;
+                   else url->host += urlString[i];
+                   }
+                 break;
+      case PORT: if (urlString[i] == '/') state = PATH;
+                 else  url->port += urlString[i];
+                 break;
+      case PATH: url->path += urlString[i];
+
+    }
+  }
 }
