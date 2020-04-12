@@ -3,7 +3,7 @@
 *
 *  This sketch:
 *    - connects (WPA encryption)to an internet radio site using an ESP32 module
-}    - reads the mp3 data stream
+*    - reads the mp3 data stream
 *    - buffers the data in an external SPI controlled RAM
 *    - transfers it to the VS1053 so that it can decode
 *      the mp3 data into an audio signal.
@@ -15,7 +15,7 @@
 * SPI               - Serial Progamming Interface standard library
 * WiFi              - Standard Arduino  WiFi library
 * WiFiMulti         - Standard library for connecting to multiple access points
-* HTTPClient        - Standard library for HTTP processing .
+* HTTPClient        - Standard library for HTTP processing.   //TODO remove this library
 * ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
 *                     Handles basic communication with the memory chip.
 * LiquidCrytal      - Controls the LCD display.
@@ -44,7 +44,7 @@
 #include "Groups.h"
 #include "credentials.h"
 
-const char programName[] = "Internet-Radio-Module 04.01.2020";
+const char programName[] = "Internet-Radio-Module 12.04.2020";
 
 // Pin setup for the VS1053
 const int DREQ = 26;
@@ -64,9 +64,8 @@ Lemon_VS1053 player = Lemon_VS1053(XRST, XCS, XDCS, DREQ);
 // Set up the external RAM as a ring buffer
 SPIRingBuffer ringBuffer(RAMCS);
 
-// initialize the LCD library by associating any needed LCD interface pins
+// Initialize the LCD library by associating any needed LCD interface pins
 // with the microcontroller pin number it is connected to
-//const int rs = 12, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //TODO: CAREFUL, MAY DIFFER FROM PCB DESIGN!
 const int rs = 12, en = 2, d4 = 16, d5 = 4, d6 = 5, d7 = 21;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 long blinkTime = 0;
@@ -96,10 +95,10 @@ enum SelectionState {STATION_SELECT, GROUP_SELECT} selectionState;
 enum StatusDisplayState  {NONE, GROUP, CONNECT};
 StatusDisplayState statusDisplayState = NONE;
 
-// The display bufer used for scolling text tciker tape style
+// The display bufer used for scolling text ticker tape style
 const int DISPLAY_BUFFER_LEN = 16; // Number of characters the LCD can display
-const int SPACING = 2; // Number characters used to seperate strings in
-                       // a ticker tape style diplay
+const int SPACING = 2;             // Number characters used to seperate strings
+                                   // in a ticker tape style diplay
 const int ROLL_DISPLAY_TIME = 350; // How quickly the display is rolled in ms
 int scrollTime;
 char displayBuffer[DISPLAY_BUFFER_LEN + 1];
@@ -114,7 +113,7 @@ const int THRESHOLD = ringBuffer.RING_BUFFER_LENGTH / 5;   // 20%
 // The skip flag to allow the buffer to catch up
 int skip = 0;
 
-volatile int checkControlStatus = 0;
+//volatile int checkControlStatus = 0;
 
 // Setup the WIFI objects
 WiFiMulti WiFiMulti;
@@ -192,12 +191,10 @@ void setup() {
   // Set up the control button to change te stations
   pinMode(controlButtonPin, INPUT_PULLUP);
 
-
-
   // set up the LCD with the  number of columns and rows
   lcd.begin(16, 2);
 
-  // Before initialising using the libraries  make sure that the CS pins are
+  // Before initialising using the libraries make sure that the CS pins are
   // in the right state
   pinMode(XCS, OUTPUT);
   digitalWrite(XCS, HIGH);
@@ -219,73 +216,67 @@ void setup() {
      Serial.println("MP3 codec initialised.");
   }
 
-
-
-
   if (player.readyForData()) {
     Serial.println("Ready for data");
   } else {
     Serial.println("Not ready for data");
   }
-    // Make sure the VS1053 is in MP3 mode.
-    // For some boards this is not the case.
-    while (!player.readyForData()) {}
-    player.setMP3Mode();
 
-    // Set the volume
-    while (!player.readyForData()) {}
-    player.setVolume(40,40);  // Higher is quieter.
+  // Make sure the VS1053 is in MP3 mode.
+  // For some boards this is not the case.
+  while (!player.readyForData()) {}
+  player.setMP3Mode();
 
-    // Connect to the WIFI access point
-    Serial.println("Attempting to connect to WIFI AP");
-    displayConnecting();
-    lcd.setCursor(0,1);
-    lcd.print( "WiFi");
+  // Set the volume
+  while (!player.readyForData()) {}
+  player.setVolume(40,40);  // Higher is quieter.
 
+  // Connect to the WIFI access point
+  Serial.println("Attempting to connect to WIFI AP");
+  displayConnecting();
+  lcd.setCursor(0,1);
+  lcd.print( "WiFi");
 
+  WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
 
-    WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
+  // Wait for WiFi connection.
+  // Using a large number of connection attempts
+  // with a short interval between them seems
+  // to ensure that a connection is (almost)
+  // always made.
+  const int MAX_CONNECTION_ATTEMPTS = 50;
+  int nAttempts = 0;
+  while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
+    Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
+    delay(50);
+    nAttempts++;
 
-    // Wait for WiFi connection.
-    // Using a large number of connection attempts
-    // with a short interval between them seems
-    // to ensure that a connection is (almost)
-    // always made.
-    const int MAX_CONNECTION_ATTEMPTS = 50;
-    int nAttempts = 0;
-    while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
-      Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
-      delay(50);
-      nAttempts++;
+  }
+  Serial.println();
+  if (nAttempts >= MAX_CONNECTION_ATTEMPTS) {
+     Serial.print("FAILED to connect to WIFI AP after ");
+     Serial.print(MAX_CONNECTION_ATTEMPTS);
+     Serial.println(" attempts!");
+     printLCD("FAILED to", "connect to WiFi");
+     setupFailure = true;
+  } else {
+     Serial.print("Connected to WIFI AP");
+     printLCD("Connected to", "WiFi");
+  }
 
-    }
-    Serial.println();
-    if (nAttempts >= MAX_CONNECTION_ATTEMPTS) {
-       Serial.print("FAILED to connect to WIFI AP after ");
-       Serial.print(MAX_CONNECTION_ATTEMPTS);
-       Serial.println(" attempts!");
-       printLCD("FAILED to", "connect to WiFi");
-       setupFailure = true;
-    } else {
-       Serial.print("Connected to WIFI AP");
-       printLCD("Connected to", "WiFi");
-    }
+  // Set the initial station
+  // TODO Read the last station set from the EEPROM
+  initializeGroupStructure();
 
-    // Set the initial station
-    // TODO Read the last station set from the EEPROM
-    initializeGroupStructure();
+  if((WiFiMulti.run() == WL_CONNECTED)) {
+     lcd.clear();
+     lcd.print("Connected to WIFI");
+     readStationConfiguration();
+     setStation();
+  }
 
-    if((WiFiMulti.run() == WL_CONNECTED)) {
-       lcd.clear();
-       lcd.print("Connected to WIFI");
-       readStationConfiguration();
-       setStation();
-
-    }
-
-    // Set all timing variables to now
-    scrollTime = currentTime = blinkTime = millis();
-
+  // Set all timing variables to now
+  scrollTime = currentTime = blinkTime = millis();
 }
 
 void loop() {
@@ -315,12 +306,12 @@ void loop() {
               if (selectionState == GROUP_SELECT) {
                 changeGroup();
                 displayCurrentGroup();
-                //setStation();
                 displayCurrentStation();
               } else {  // Station select
-                // Reinitialise the  buffer
+                // Reinitialise the buffer
                 bufferInitialized = false;
                 ringBuffer.begin();
+                // Now change the station and connect to it
                 changeStation();
                 setStation();
                 displayCurrentStation();
@@ -336,18 +327,19 @@ void loop() {
     return;
    }
 
-
-   // Now check if the station length is longer than 16
+   // Now check if the station length is longer than 16, i.e, the number of
+   // characters that fit on a line in the LCD. If not then roll the
+   // station name in the display ticker tape style.
+   // TODO change station lenght to a constant
    if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
      rollStationDisplay();
    }
-
 
   if (!bufferInitialized) {
     // Load up the buffer
     nBytes = client.available();
     if (nBytes) {
-      // read in chunks of up to 32 bytes
+      // Read in chunks of up to 32 bytes
 
       //    availableSpace()       nBytes         ->    maxBytesToRead
       //    =================   =================     ===============
@@ -422,10 +414,18 @@ void loop() {
 
 }
 
+/*
+ * Initialise the structure used to hold the stations and group data.
+ */
 void initializeGroupStructure() {
    groups = new Groups(maxNumberStationsInGroup, maxNumberGroups);
 }
 
+/*
+ *  Read the station and group data from a file stored at a fixed URL on the
+ *  Internet. In this way, the stations and groups can always be changed
+ *  without having to reprogramm the firmware.
+ */
 void readStationConfiguration() {
   HTTPClient http;
 
@@ -445,7 +445,6 @@ void readStationConfiguration() {
   if(httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
       Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-
 
       // file found at server
       if(httpCode == HTTP_CODE_OK) {
@@ -474,7 +473,6 @@ void readStationConfiguration() {
                 Serial.print(",");
                 Serial.print(station->getURL());
                 Serial.println();
-
             	}
             }
 
@@ -498,6 +496,10 @@ void readStationConfiguration() {
 
   http.end();
 }
+
+/*
+ * Display the selected group in top line of the  LCD display
+ */
 void displayCurrentGroup() {
   clearDisplayLine(0);
   if (currentGroup != NULL) {
@@ -508,6 +510,9 @@ void displayCurrentGroup() {
   displayCurrentStation();
 }
 
+/*
+ * Display the selected station in the bottom line of the LCD display
+ */
 void displayCurrentStation() {
   if (currentStation == NULL) {
     currentGroup->begin();
@@ -520,6 +525,10 @@ void displayCurrentStation() {
   }
 }
 
+/*
+ *  Show the user in the top line of the LCD display that the radio is attempting to
+ *  connect to the selected station.
+ */
 void displayConnecting() {
   clearDisplayLine(0);
   lcd.setCursor(0,0);
@@ -527,6 +536,10 @@ void displayConnecting() {
   statusDisplayState = CONNECT;
 }
 
+/*
+ * Change to the next station in the current group. If no more stations
+ * then loop back to the first station in the group.
+ */
 void changeStation() {
   currentStation = currentGroup->next();
   if (currentStation == NULL) {
@@ -540,6 +553,10 @@ void changeStation() {
   tickerTapeStep = 0;
 }
 
+/*
+ * Change to the next group. If no more groups then loop back to the
+ * first group.
+ */
 void changeGroup() {
   currentGroup = groups->next();
   if (currentGroup == NULL) {  // Cycle through the groups
@@ -552,7 +569,10 @@ void changeGroup() {
   currentStation = currentGroup->next();
 }
 
-
+/*
+ * Roll the station name ticker type style. In this way long stations names
+ * are fully displayed.
+ */
 void rollStationDisplay() {
    if ((millis() - scrollTime) > ROLL_DISPLAY_TIME) {  // Time to roll the display,
      tickerTape(tickerTapeStep, currentStation->getName(), strlen(currentStation->getName()), displayBuffer, DISPLAY_BUFFER_LEN, SPACING);
@@ -564,6 +584,10 @@ void rollStationDisplay() {
   }
 }
 
+/*
+ * Blink the name of the group. This is used to show the user that the radio
+ * is in group selection mode.
+ */
 void blinkGroup() {
   lcd.setCursor(0,1);
   lcd.print("                "); // Clear the station details
@@ -584,7 +608,10 @@ void blinkGroup() {
   }
 }
 
-// Step < length of display
+/*
+ * Basic ticker tape functionality
+ * Note:  Step < length of display
+ */
 void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int displayLength, int spacing) {
   int pos;
 
@@ -656,8 +683,9 @@ void handleRedirect() {
 
 }
 
-/* Set the station.
-*/
+/*
+ * Set the station.
+ */
 void setStation() {
 
   // Disconnect if already connected
@@ -753,25 +781,20 @@ void printLCD(String line1, String line2) {
 
 }
 
-/**
+/*
 * Connect to the station specified by the urlString.
-* Returns the HTTP response code
+* Returns the HTTP response code.
+* Note: we are not using a standard HTTP library to do this as some
+* stations do not conform to the HTTP standard and do not return
+* standard HTTP response headers. This rountine handles this case.
+*
+* TODO - IN addition , some station return a redirect which can often vary.
+* This routine will automatically handle this case and attempt the redirect.
 */
 int connectStation(String urlString) {
   URL url;
 
-//TEST
-//  parseURL("http://stations.com/streaming/music.mp3", &url);
-//  printURL(&url);
-//  parseURL("http://domain.stations.com/channels/pop/more_music", &url);
-//  printURL(&url);
-//  parseURL("http://domain.stations.com:80/x/more_music.mp3", &url);
-//  printURL(&url);
-//
-//  return -1000;
-//
   parseURL(urlString, &url);
-
 
   int httpPort;
   if (url.port.length() == 0) httpPort =  80;
@@ -782,14 +805,10 @@ int connectStation(String urlString) {
       return -2;  //TODO Failed to connect
   }
 
-  // We now create a URI for the request
-  //String url = requestURI;
-
 
   Serial.print("Requesting URL: ");
-  //printURL(&url);
 
-  // This will send the request to the server
+  // This will send the GET request to the server
   client.print(String("GET ") + url.path + " HTTP/1.1\r\n" +
                "Host: " + url.host + "\r\n" +
                "Connection: keep-alive\r\n\r\n");
@@ -840,6 +859,10 @@ int connectStation(String urlString) {
   return responseCode.toInt();
 }
 
+/*
+ * Parses a URL (as string) into its component parts and places the result
+ * in the specified structure.
+ */
 void parseURL(String urlString, URL* url) {
   // Assume a valid URL
 
