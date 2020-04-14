@@ -86,7 +86,7 @@ void loop()
 */
 int connectStation(String urlString) {
   URL url;
-  
+
 //TEST
 //  parseURL("http://stations.com/streaming/music.mp3", &url);
 //  printURL(&url);
@@ -96,7 +96,7 @@ int connectStation(String urlString) {
 //  printURL(&url);
 //
 //  return -1000;
-//  
+//
   parseURL(urlString, &url);
 
 
@@ -167,6 +167,11 @@ int connectStation(String urlString) {
   return responseCode.toInt();
 }
 
+/*
+ * Parses a string represeting a URL into a struct.
+ * The mmebers of the struct can be used for standard
+*  Internet connectivity libraries.
+ */
 void parseURL(String urlString, URL* url) {
   // Assume a valid URL
 
@@ -204,6 +209,9 @@ void parseURL(String urlString, URL* url) {
   }
 }
 
+/*
+ * Prints out a formatted version of the URL. Only used for test purposes.
+ */
 void printURL(URL* url) {
   Serial.print(url->protocol);
   Serial.print("://");
