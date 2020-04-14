@@ -175,7 +175,7 @@ void initializeGroupStructure();
 void readStationConfiguration();
 void clearDisplayLine(int);
 void tickerTape(int, char*, int, char*, int, int);
-int connectStation(String);
+int  httpConnect(String, boolean);
 void parseURL(String, URL*);
 
 
@@ -700,58 +700,25 @@ void setStation() {
   displayConnecting();
   displayCurrentStation();
 
-  // Connect to the server and any headers
-  int httpCode = connectStation(currentStation->getURL());
-  //TODO it is not so transparent that the above  sets up the wifi client
+  // Connect to the server , read any headers and set up the client to
+  //  the start of the MP3 stream.
+  int httpCode = httpConnect(currentStation->getURL(), true);
 
-  // HTTP header has been send and Server response header has been handled
+  // HTTP header has been send and server response header has been handled
   Serial.printf("[HTTP] GET... code: %d\n", httpCode);
 
-  // file found at server
-  // TODO rewrite!!
-  switch (httpCode) {
-    case HTTP_CODE_OK:
-      // get tcp stream of payload
-      //stream = http.getStreamPtr();
-      break;
-    case HTTP_CODE_TEMPORARY_REDIRECT:
-       handleRedirect();
-       break;
-    case HTTP_CODE_PERMANENT_REDIRECT:
-       handleRedirect();
-       break;
-       case HTTPC_ERROR_NO_HTTP_SERVER:
-//         // Certain stations (such as the BBC !!!) do not send an HTTP
-//         // response header back leading to this error. In this case,
-//         // just get the MP3 stream over a TCP connection
-//         Serial.println("HTTPC_ERROR_NO_HTTP_SERVER"); // TODO
-//         //char* nonHTTPHost = currentStation->getURL()+ 7;
-//         Serial.print("NON HTTP HOST:");
-//         Serial.println(currentStation->getURL()+ 7);
-//
-//         if (!stream->connect(currentStation->getURL()+ 7, 80)) {
-//
-//         //if (!stream->connect(currentStation->getURL(), 80)) {
-//          Serial.println("Connection failed - do something better here");
-//         }
-
-
-         break;
-    default:
-      // HTTP code returned that cannot be handled
-      handleOtherCode(httpCode);
-      break;
-
-  } // switch httpCode
-
+  if (httpCode != HTTP_CODE_OK) {
+    handleOtherCode(httpCode);
+  }  
 
 }
 
 
 
 /*
- *  Handles other HTTP codes
- *
+ *  Handles other HTTP codes.
+ *  Not much we can do with them apart from notifing the user that
+ *  something has gone terribly wrong.
  */
 void handleOtherCode(int httpCode) {
   // TODO as part of the general error handling
@@ -782,16 +749,16 @@ void printLCD(String line1, String line2) {
 }
 
 /*
-* Connect to the station specified by the urlString.
-* Returns the HTTP response code.
-* Note: we are not using a standard HTTP library to do this as some
-* stations do not conform to the HTTP standard and do not return
-* standard HTTP response headers. This rountine handles this case.
-*
-* TODO - IN addition , some station return a redirect which can often vary.
-* This routine will automatically handle this case and attempt the redirect.
-*/
-int connectStation(String urlString) {
+ * Connect to the station specified by the urlString. In addtion 
+ * the connection can be requested to stay alive as is required
+ * for streaming responses. 
+ * Returns the HTTP response code.
+ * Note: we are not using a standard HTTP library to do this as some
+ * stations do not conform to the HTTP standard and do not return
+ * standard HTTP response headers. This rountine handles this case.
+ *
+ */
+int httpConnect(String urlString, boolean stayAlive) {
   URL url;
 
   parseURL(urlString, &url);
@@ -809,9 +776,15 @@ int connectStation(String urlString) {
   Serial.print("Requesting URL: ");
 
   // This will send the GET request to the server
-  client.print(String("GET ") + url.path + " HTTP/1.1\r\n" +
-               "Host: " + url.host + "\r\n" +
-               "Connection: keep-alive\r\n\r\n");
+  String request = String("GET ") + url.path + " HTTP/1.1\r\n" +
+               "Host: " + url.host + "\r\n";
+  if (stayAlive) request +=  "Connection: keep-alive\r\n";
+  request += "\r\n";
+  
+//  client.print(String("GET ") + url.path + " HTTP/1.1\r\n" +
+//               "Host: " + url.host + "\r\n" +
+//               "Connection: keep-alive\r\n\r\n");
+  client.print(request);
 
   unsigned long timeout = millis();
   while (client.available() == 0) {
