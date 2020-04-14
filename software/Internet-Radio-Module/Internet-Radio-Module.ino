@@ -175,6 +175,7 @@ void initializeGroupStructure();
 void readStationConfiguration();
 void clearDisplayLine(int);
 void tickerTape(int, char*, int, char*, int, int);
+int  httpConnect(String);
 int  httpConnect(String, boolean);
 void parseURL(String, URL*);
 
@@ -709,7 +710,7 @@ void setStation() {
 
   if (httpCode != HTTP_CODE_OK) {
     handleOtherCode(httpCode);
-  }  
+  }
 
 }
 
@@ -749,9 +750,17 @@ void printLCD(String line1, String line2) {
 }
 
 /*
- * Connect to the station specified by the urlString. In addtion 
+ * Helper function to connect to a site without specifying 
+ * that the connection shoudl be kept alive. 
+ */
+int httpConnect(String urlString) {
+  httpConnect(urlString, false);
+}
+
+/*
+ * Connect to the site specified by the urlString. In addtion
  * the connection can be requested to stay alive as is required
- * for streaming responses. 
+ * for streaming responses.
  * Returns the HTTP response code.
  * Note: we are not using a standard HTTP library to do this as some
  * stations do not conform to the HTTP standard and do not return
@@ -780,7 +789,7 @@ int httpConnect(String urlString, boolean stayAlive) {
                "Host: " + url.host + "\r\n";
   if (stayAlive) request +=  "Connection: keep-alive\r\n";
   request += "\r\n";
-  
+
 //  client.print(String("GET ") + url.path + " HTTP/1.1\r\n" +
 //               "Host: " + url.host + "\r\n" +
 //               "Connection: keep-alive\r\n\r\n");
