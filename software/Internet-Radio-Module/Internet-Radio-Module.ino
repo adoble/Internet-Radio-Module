@@ -14,7 +14,6 @@
 * Arduino           - Standard Arduino library
 * SPI               - Serial Progamming Interface standard library
 * WiFi              - Standard Arduino  WiFi library
-* WiFiMulti         - Standard library for connecting to multiple access points
 * ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
 *                     Handles basic communication with the memory chip.
 * LiquidCrytal      - Controls the LCD display.
@@ -32,7 +31,6 @@
 #include <Arduino.h>
 
 #include <WiFi.h>
-#include <WiFiMulti.h>
 #include <LiquidCrystal.h>
 
 #include <SPI.h>
@@ -117,7 +115,7 @@ int skip = 0;
 //volatile int checkControlStatus = 0;
 
 // Setup the WIFI objects
-WiFiMulti WiFiMulti;
+//WiFiMulti WiFiMulti;  //TODO remove
 
 // HTTP connection codes
 const int HTTP_CODE_OK = 200;
@@ -249,21 +247,19 @@ void setup() {
   lcd.setCursor(0,1);
   lcd.print( "WiFi");
 
-  WiFiMulti.addAP(ssid, password);  // Only adding ONE access point
-
-  // Wait for WiFi connection.
-  // Using a large number of connection attempts
-  // with a short interval between them seems
-  // to ensure that a connection is (almost)
-  // always made.
-  const int MAX_CONNECTION_ATTEMPTS = 50;
+ 
+  // Wait for WiFi connection.  
+  const int MAX_CONNECTION_ATTEMPTS = 20;
   int nAttempts = 0;
-  while((WiFiMulti.run() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
-    Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
-    delay(50);
-    nAttempts++;
 
+  WiFi.begin(ssid, password);
+
+  while((WiFi.status() != WL_CONNECTED && nAttempts <  MAX_CONNECTION_ATTEMPTS)) {
+    Serial.print("WiFi Connection attempt "); Serial.println(nAttempts + 1);
+    delay(500);
+    nAttempts++;
   }
+
   Serial.println();
   if (nAttempts >= MAX_CONNECTION_ATTEMPTS) {
      Serial.print("FAILED to connect to WIFI AP after ");
@@ -280,7 +276,7 @@ void setup() {
   // TODO Read the last station set from the EEPROM
   initializeGroupStructure();
 
-  if((WiFiMulti.run() == WL_CONNECTED)) {
+  if((WiFi.status() == WL_CONNECTED)) {
      lcd.clear();
      lcd.print("Connected to WIFI");
      readStationConfiguration();
@@ -342,7 +338,6 @@ void loop() {
    // Now check if the station length is longer than 16, i.e, the number of
    // characters that fit on a line in the LCD. If not then roll the
    // station name in the display ticker tape style.
-   // TODO change station lenght to a constant
    if (strlen(currentStation->getName()) > 16 && selectionState != GROUP_SELECT) {
      rollStationDisplay();
    }
