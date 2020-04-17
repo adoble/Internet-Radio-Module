@@ -15,7 +15,6 @@
 * SPI               - Serial Progamming Interface standard library
 * WiFi              - Standard Arduino  WiFi library
 * WiFiMulti         - Standard library for connecting to multiple access points
-* HTTPClient        - Standard library for HTTP processing.   //TODO remove this library
 * ESP8266_Spiram    - Used by SPIRingBuffer as a driver for the 23LC1024.
 *                     Handles basic communication with the memory chip.
 * LiquidCrytal      - Controls the LCD display.
@@ -34,7 +33,6 @@
 
 #include <WiFi.h>
 #include <WiFiMulti.h>
-#include <HTTPClient.h>
 #include <LiquidCrystal.h>
 
 #include <SPI.h>
@@ -44,7 +42,10 @@
 #include "Groups.h"
 #include "credentials.h"
 
-const char programName[] = "Internet-Radio-Module 12.04.2020";
+const char programName[] = "Internet-Radio-Module 16.04.2020";
+
+const char stationFile[] = "http://www.andrew-doble.homepage.t-online.de/ir/stations.txt";
+
 
 // Pin setup for the VS1053
 const int DREQ = 26;
@@ -117,21 +118,24 @@ int skip = 0;
 
 // Setup the WIFI objects
 WiFiMulti WiFiMulti;
-HTTPClient http;
+
+// HTTP connection codes
+const int HTTP_CODE_OK = 200;
+const int HTTP_CONNECTION_TIMED_OUT = -1;
+const int HTTP_CONNECTION_FAILED = -2;
+
+
 
 // WiFi configuration using the defines in credentials.h
 const char* ssid     = WIFI_SSID;
 const char* password = WIFI_PWD;
 
 // Dimensions of the station group data structure
-const int maxPayloadLength = 1000;
-const int maxNumberStationsInGroup = 10;
-const int maxNumberGroups = 10;
+const int maxNumberStationsInGroup = 20;
+const int maxNumberGroups = 20;
 
-struct Payload {
-  char* pDataBuffer;
-  int length;
-} payload;
+const int PAYLOADLEN = 4000;
+char payload[PAYLOADLEN];
 
 // The structure containing the groups and the stations
 Groups* groups;
@@ -144,8 +148,6 @@ struct URL {
   String port = "";
   String path = "";
 };
-
-
 
 // Create a buffer  to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
 // is the amount that can be transfered to the VS1053 in one SPI operation.
@@ -166,6 +168,10 @@ int toneControl = 0;
 // a failure with the setup
 boolean setupFailure = false;
 
+// A set of (normally fatal) errors that cannot be recovered from.
+const int ERROR_CURRENT_STATION_NULL = -100;
+const int ERROR_CURRENT_GROUP_NULL = -101;
+const int ERROR_GROUP_NULL = -102;
 
 // Function prototypes
 void handleRedirect();
@@ -175,10 +181,15 @@ void initializeGroupStructure();
 void readStationConfiguration();
 void clearDisplayLine(int);
 void tickerTape(int, char*, int, char*, int, int);
-int  httpConnect(String);
-int  httpConnect(String, boolean);
-void parseURL(String, URL*);
-
+int  httpConnect(const char[]);
+int  httpConnect(const char[], boolean);
+void parseURL(const char[], URL*);
+void printStationStucture();
+void displayConnecting();
+void printLCD(String, String);
+void displayCurrentGroup();
+void rollStationDisplay();
+void printParsedURL(URL*);
 
 void setup() {
 
@@ -261,7 +272,7 @@ void setup() {
      printLCD("FAILED to", "connect to WiFi");
      setupFailure = true;
   } else {
-     Serial.print("Connected to WIFI AP");
+     Serial.println("Connected to WIFI AP");
      printLCD("Connected to", "WiFi");
   }
 
@@ -428,75 +439,94 @@ void initializeGroupStructure() {
  *  without having to reprogramm the firmware.
  */
 void readStationConfiguration() {
-  HTTPClient http;
+  int fatalError = 0;
 
-
-  Serial.print("[HTTP] begin...\n");
+  Serial.print("HTTP begin to read stations...\n");
   lcd.clear();
   lcd.write("Reading stations");
-  // configure station server  url
-  //http.begin("https://www.howsmyssl.com/a/check", ca); //HTTPS
-  http.begin("http://www.andrew-doble.homepage.t-online.de/ir/stations.txt"); //HTTP
 
-  Serial.print("[HTTP] GET...\n");
-  // start connection and send HTTP header
-  int httpCode = http.GET();
+  int httpCode = httpConnect(stationFile);
 
   // httpCode will be negative on error
-  if(httpCode > 0) {
-      // HTTP header has been send and Server response header has been handled
-      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+  if (httpCode <= 0) {
+    Serial.printf("Unable to read stations: HTTP GET... failed, error: %d\n", httpCode);
+    return;
+  }
 
-      // file found at server
-      if(httpCode == HTTP_CODE_OK) {
-          String payloadString = http.getString();
+  // HTTP header has been sent and server response header has been handled
+  Serial.printf("[HTTP] GET stations... code: %d\n", httpCode);  //TODO get rid of printf fucntions
 
-          // Copy the payload into a char array for further manipulation
-          payload.length = payloadString.length();
+  // file found at server
+  if (httpCode == HTTP_CODE_OK) {
+    int index = 0;
+    int c;
+    boolean payloadFull = false;
+    while ( (c = client.read()) != -1) {
+      if (index < PAYLOADLEN - 1) {
+        payload[index++] = c;
+      } else {
+        payloadFull = true;
+        break;
+      }
+    }
 
-          payload.pDataBuffer = new char[payload.length];
-          //payloadString.toCharArray(payload.pDataBuffer, maxPayloadLength);
-          payloadString.toCharArray(payload.pDataBuffer, payload.length);
+  if (!payloadFull) {
+      //Terminate the payload string
+      payload[index] = '\0';
+  } else {
+    // Move backwards until the last CR and terminate the
+    // sttring after this. In this way station definition
+    // files that are too large for the payload buffer are
+    // simply ignored (altough a console message is given)
+    Serial.println("Station defintion file is too large for buffer and has been truncated.");
 
-          groups->setup(payload.pDataBuffer, payload.length);
+    while (payload[index] != '\r') {
+      index--;
+    }
+    // Terminatethe string after the CR
+    payload[index +1] = '\0';
+  }
 
-          // Print out the group and station structure
-          groups->begin();
-        	Group* group;
-            while ((group = groups->next()) != NULL) {
-            	Serial.println(group->getName());
+  int payloadLength = index;
 
-            	group->begin();
-            	Station* station;
-            	while ((station = group->next()) != NULL) {
-            		Serial.print("    ");
-                Serial.print(station->getName());
-                Serial.print(",");
-                Serial.print(station->getURL());
-                Serial.println();
-            	}
-            }
+  // Setup the groups structure
+  groups->setup(payload, payloadLength);
 
-      // Set the LCD to the first group and station
-      if (groups == NULL) Serial.println("PANIC A");
-      groups->begin();
-      currentGroup = groups->next();
-      if (currentGroup == NULL)  Serial.println("PANIC B");
+  // Print out the group and station structure to the console
+  printStationStucture();
 
+  // Set the LCD to the first group and station
+  if (groups != NULL) {
+    groups->begin();
+    currentGroup = groups->next();
+    if (currentGroup != NULL) {
       lcd.clear();
       lcd.print(currentGroup->getName());
       currentGroup->begin();
       currentStation = currentGroup->next();
-      if (currentStation == NULL)  Serial.println("PANIC C");
-      lcd.setCursor(0,1);
-      lcd.print(currentStation->getName());
-  }
+      if (currentStation != NULL)  {
+        lcd.setCursor(0,1);
+        lcd.print(currentStation->getName());
+      } else {
+        fatalError = ERROR_CURRENT_STATION_NULL;
+      }
+    } else {
+      fatalError = ERROR_CURRENT_GROUP_NULL;
+    }
   } else {
-      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  fatalError = ERROR_GROUP_NULL;
   }
 
-  http.end();
-}
+  if (fatalError) {
+    Serial.printf("FATAL ERROR in setting up group/stations [%i]", fatalError );
+    lcd.clear();
+    lcd.print("ERROR: Get Help!");
+  }
+
+  client.stop();
+
+  }
+} // -- readStationConfiguration
 
 /*
  * Display the selected group in top line of the  LCD display
@@ -642,49 +672,6 @@ void tickerTape(int rollStep, char* text, int textLen, char* displayBuffer, int 
 
 
 /*
- *  Handles HTTP redirects
- *  As there are currently difficulties in finding a site that has redriects
- *  this function has NOT BEEN TESTED
- * TODO Do we need this?
- */
-void handleRedirect() {
-    String newSite;
-    // TODO
-    Serial.println("REDIRECT!");
-
-    if (http.hasHeader("Location")) {
-      newSite = http.header("Location");
-    }
-
-    http.begin(newSite);
-
-    // start connection and send HTTP header
-    int httpCode = http.GET();
-
-    if(httpCode > 0) {
-        // file found at server
-        switch (httpCode) {
-          case HTTP_CODE_OK:
-            // TODO Add this code
-            break;
-          case HTTP_CODE_FOUND:
-            // TODO add this code
-            break;
-          default:
-            // HTTP cde retuned that cannot be handled
-            handleOtherCode(httpCode);
-            break;
-        }
-    }
-    else {
-      // TODO replace this with the general error handling
-      Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    }
-
-
-}
-
-/*
  * Set the station.
  */
 void setStation() {
@@ -723,7 +710,7 @@ void setStation() {
  */
 void handleOtherCode(int httpCode) {
   // TODO as part of the general error handling
-  Serial.printf("[HTTP] GET... failed, error[%d]: %s\n", httpCode, http.errorToString(httpCode).c_str());
+  Serial.printf("[HTTP] GET... failed, error[%d] \n", httpCode);
 
   String msg = "";
   msg.concat("Error Code:");
@@ -750,11 +737,11 @@ void printLCD(String line1, String line2) {
 }
 
 /*
- * Helper function to connect to a site without specifying 
- * that the connection shoudl be kept alive. 
+ * Helper function to connect to a site without specifying
+ * that the connection shoudl be kept alive.
  */
-int httpConnect(String urlString) {
-  httpConnect(urlString, false);
+int httpConnect(const char urlString[]) {
+  return httpConnect(urlString, false);
 }
 
 /*
@@ -764,13 +751,21 @@ int httpConnect(String urlString) {
  * Returns the HTTP response code.
  * Note: we are not using a standard HTTP library to do this as some
  * stations do not conform to the HTTP standard and do not return
- * standard HTTP response headers. This rountine handles this case.
+ * standard HTTP response headers. This routine handles this case.
  *
  */
-int httpConnect(String urlString, boolean stayAlive) {
+int httpConnect(const char urlString[], boolean stayAlive) {
   URL url;
+  String protocol;
+  String responseCode;
+  String headerFields;
 
   parseURL(urlString, &url);
+
+  Serial.println("Connecting to station at URL ...");
+  Serial.print("   ");
+  printParsedURL(&url);
+  Serial.println();
 
   int httpPort;
   if (url.port.length() == 0) httpPort =  80;
@@ -778,11 +773,12 @@ int httpConnect(String urlString, boolean stayAlive) {
 
   if (!client.connect(url.host.c_str(), httpPort)) {
       Serial.println("Connection failed");
-      return -2;  //TODO Failed to connect
+      return HTTP_CONNECTION_FAILED;  //TODO Failed to connect
   }
 
 
   Serial.print("Requesting URL: ");
+
 
   // This will send the GET request to the server
   String request = String("GET ") + url.path + " HTTP/1.1\r\n" +
@@ -800,19 +796,17 @@ int httpConnect(String urlString, boolean stayAlive) {
       if (millis() - timeout > 5000) {
           Serial.println("ERROR: Timeout!");
           client.stop();
-          return -1;  //TODO timeout
+          return HTTP_CONNECTION_TIMED_OUT;  //TODO timeout
       }
   }
 
   // Now read the response code.
-  String protocol;
-  String responseCode;
-  String headerFields;
-
   char c;
   while (client.available() && (c = client.read()) != ' ') {
     protocol += c;
   }
+
+  Serial.println("PARSED RESPONSE HEADER -->");
   Serial.print(protocol);
   Serial.print(' ');
 
@@ -837,6 +831,7 @@ int httpConnect(String urlString, boolean stayAlive) {
       break;
     }
   }
+  Serial.println("<---- END PARSED RESPONSE HEADER");
 
   return responseCode.toInt();
 }
@@ -845,7 +840,7 @@ int httpConnect(String urlString, boolean stayAlive) {
  * Parses a URL (as string) into its component parts and places the result
  * in the specified structure.
  */
-void parseURL(String urlString, URL* url) {
+void parseURL(const char urlString[], URL* url) {
   // Assume a valid URL
 
   enum URLParseState {PROTOCOL, SEPERATOR, HOST, PORT, PATH} state = PROTOCOL;
@@ -856,8 +851,8 @@ void parseURL(String urlString, URL* url) {
   url->path = "/";
 
 
-  for (int i = 0; i < urlString.length(); i++) {
-    switch(state)
+  for (int i = 0; urlString[i] != '\0'; i++) {
+      switch(state)
     {
       case PROTOCOL: if (urlString[i] == ':') state = SEPERATOR;
                      else url->protocol += urlString[i];
@@ -880,4 +875,40 @@ void parseURL(String urlString, URL* url) {
 
     }
   }
+}
+
+
+//* Print to the console the group and station structure
+void printStationStucture() {
+
+   groups->begin();
+   Group* group;
+   while ((group = groups->next()) != NULL) {
+     Serial.println(group->getName());
+
+     group->begin();
+     Station* station;
+     while ((station = group->next()) != NULL) {
+       Serial.print("    ");
+       Serial.print(station->getName());
+       Serial.print(",");
+       Serial.print(station->getURL());
+       Serial.println();
+     }
+   }
+}
+
+/*
+ * Prints out a formatted version of the URL. Only used for test purposes.
+ */
+void printParsedURL(URL* url) {
+  Serial.print(url->protocol);
+  Serial.print("://");
+  Serial.print(url->host);
+  if (url->port.length() > 0) {
+    Serial.print(":");
+    Serial.print(url->port);
+  }
+  //Serial.print("/");
+  Serial.println(url->path);
 }
