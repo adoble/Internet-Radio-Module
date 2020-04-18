@@ -25,3 +25,10 @@ char* Station::getName() {
 char* Station::getURL() {
 	return url;
 }
+
+/*
+ * Return the ordinal position of the station in the group
+ */
+ int Station::getIndex() {
+	 return index;
+ }

@@ -28,6 +28,8 @@ public:
 
 	void begin();
 	Station* next();
+	int getIndex();
+  int numberStations();
 
 private:
 	int maxGroupSize;   // Max number of stations in a group
@@ -35,6 +37,9 @@ private:
 	Station** stations; // List of pointers to the station data.
 	int nStations;      // Number of stations in this group
 	int iterator;       // Used to iterate the groups contained in a object of this class.
+	int index;          // The ordinal position of the group in the groups
+
+	friend class Groups;
 
 
 };

@@ -149,7 +149,8 @@ Group* Groups::addGroup(char* pGroupName) {
 
 	if (nGroups < groupBufferSize) {
 		pg = new Group(pGroupName, maxStationsInGroup);
-
+    pg->index = nGroups;  // The ordinal index of the group. Note that
+		                      // Groups is a friend class of Group
 		pGroups[nGroups] = pg;
 		//*(groups.pGroups + groups.nGroups) = pg;
 		nGroups++;
@@ -186,5 +187,3 @@ void Groups::begin() {
 	iterator = 0;
 
 }
-
-

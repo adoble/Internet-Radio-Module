@@ -33,6 +33,8 @@ Station* Group::addStation(char* pStationName, char* pStationURL) {
 	if (nStations < maxGroupSize) {
 		station = new Station(pStationName, pStationURL);
 
+		station->index = nStations;
+
 		stations[nStations] = station;
 		nStations++;
 	}
@@ -70,3 +72,16 @@ void Group::begin() {
 
 }
 
+/*
+ * Returns the ordinal position of this group in the (friend) Groups class.
+ */
+int Group::getIndex() {
+	return index;
+}
+
+/*
+ * Returns the number of stations in this group.
+ */
+int Group::numberStations() {
+  return nStations;
+}

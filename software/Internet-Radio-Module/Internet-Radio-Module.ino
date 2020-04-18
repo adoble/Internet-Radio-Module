@@ -34,6 +34,7 @@
 #include <LiquidCrystal.h>
 
 #include <SPI.h>
+#include <EEPROM.h>
 #include "Lemon_VS1053.h"
 #include "SPIRingBuffer.h"
 #include "PushButtonClicks.h"
@@ -112,7 +113,17 @@ const int THRESHOLD = ringBuffer.RING_BUFFER_LENGTH / 5;   // 20%
 // The skip flag to allow the buffer to catch up
 int skip = 0;
 
-//volatile int checkControlStatus = 0;
+// Has the station currently being listened to bee saved in the EEPROM.
+boolean stationSaved = false;
+
+// When was the station first listened to. This is used
+// to only store the station in the EEPROM after it has been
+// listered to for a period of time.
+unsigned long startListeningTime;
+
+// The number of milliseconds that a station is listened to
+// before it is saved in the EEPROM.
+const long LISTEN_TIME_BEFORE_SAVE = 10000;
 
 // Setup the WIFI objects
 //WiFiMulti WiFiMulti;  //TODO remove
@@ -146,6 +157,14 @@ struct URL {
   String port = "";
   String path = "";
 };
+
+// The EEPROM holds the last station that was selected as type bytes,
+// the group number and the station number within that group
+const uint8_t EEPROM_SIZE = 3;
+const uint8_t EEPROM_ID = 0x99;  // Used to identify valid data
+const uint8_t EEPROM_ID_ADDR = 0;
+const uint8_t EEPROM_GROUP_ADDR = 1;
+const uint8_t EEPROM_STATION_ADDR = 2;
 
 // Create a buffer  to read in the mp3 data. Thsi is set to DATABUFFERLEN as this
 // is the amount that can be transfered to the VS1053 in one SPI operation.
@@ -188,6 +207,8 @@ void printLCD(String, String);
 void displayCurrentGroup();
 void rollStationDisplay();
 void printParsedURL(URL*);
+void changeStation();
+void changeStation(int, int);
 
 void setup() {
 
@@ -247,8 +268,8 @@ void setup() {
   lcd.setCursor(0,1);
   lcd.print( "WiFi");
 
- 
-  // Wait for WiFi connection.  
+
+  // Wait for WiFi connection.
   const int MAX_CONNECTION_ATTEMPTS = 20;
   int nAttempts = 0;
 
@@ -273,18 +294,39 @@ void setup() {
   }
 
   // Set the initial station
-  // TODO Read the last station set from the EEPROM
   initializeGroupStructure();
 
   if((WiFi.status() == WL_CONNECTED)) {
      lcd.clear();
      lcd.print("Connected to WIFI");
      readStationConfiguration();
+
+     // Read the EEPROM to find the last station set
+     int lastGroup = 0;
+     int lastStation = 0;
+     if (EEPROM.begin(EEPROM_SIZE)) {
+       // Has the EEPROM been initialised?
+       uint8_t id = EEPROM.read(EEPROM_ID_ADDR);
+       if (id == EEPROM_ID) {
+         // Read the last values and select the cuurent station
+         lastGroup = EEPROM.read(EEPROM_GROUP_ADDR);
+         lastStation = EEPROM.read(EEPROM_STATION_ADDR);
+         changeStation(lastGroup, lastStation);
+       } else {
+         // Initialise the EEPROM with the first station in the first group
+         EEPROM.write(EEPROM_ID_ADDR, EEPROM_ID);
+         EEPROM.write(EEPROM_GROUP_ADDR, 0);
+         EEPROM.write(EEPROM_STATION_ADDR, 0);
+         EEPROM.commit();
+         // By default the first group and station have been selected
+       }
+     }
+
      setStation();
   }
 
   // Set all timing variables to now
-  scrollTime = currentTime = blinkTime = millis();
+  scrollTime = currentTime = blinkTime = startListeningTime = millis();
 }
 
 void loop() {
@@ -364,7 +406,8 @@ void loop() {
       if (ringBuffer.availableSpace() == 0)  {
           bufferInitialized = true;
           Serial.println("Buffer initialised");
-
+          startListeningTime = millis();
+          stationSaved = false;
       }
     }
 
@@ -372,6 +415,16 @@ void loop() {
 
   if (bufferInitialized && (statusDisplayState != GROUP)) {
     displayCurrentGroup();
+  }
+
+
+
+  if (bufferInitialized && !stationSaved && (millis() - startListeningTime) > LISTEN_TIME_BEFORE_SAVE) {
+    // Listened to the station for LISTEN_TIME_BEFORE_SAVE ms so save the station in the EEPROM.
+    // In this was the last station listened to will be played when
+    // powered up again.
+    saveCurrentStation();
+    stationSaved = true;
   }
 
 
@@ -560,6 +613,40 @@ void displayConnecting() {
   lcd.setCursor(0,0);
   lcd.print("Connecting to");
   statusDisplayState = CONNECT;
+}
+
+/*
+ * Based on the ordinal indexs of group and station set the current group
+ * and the current station.
+ * If the specified ordinal index for the group is incorrect then
+ * set the current group to the first group.
+ * If the specified ordinal index for the station in that group is incorrect
+ * then set to the first station in that group.
+ */
+void changeStation(int groupIndex, int stationIndex) {
+    groups->begin();
+    if (groupIndex < groups->numberGroups()) {
+    for (int i = 0; i <= groupIndex; i++) {
+      currentGroup = groups->next();
+    }
+  } else {
+    // Invalid group index so set group to the first one
+    currentGroup = groups->next();
+  }
+
+  currentGroup->begin();
+  if (stationIndex < currentGroup->numberStations() ) {
+    for (int i = 0; i <= stationIndex; i++) {
+      currentStation = currentGroup->next();
+    }
+  } else {
+    // Something is wrong so set to the first station in the group
+    currentStation = currentGroup->next();
+  }
+
+ // Reset any ticker tape state
+  tickerTapeStep = 0;
+
 }
 
 /*
@@ -829,6 +916,25 @@ int httpConnect(const char urlString[], boolean stayAlive) {
   Serial.println("<---- END PARSED RESPONSE HEADER");
 
   return responseCode.toInt();
+}
+
+/*
+ * Saves the current group and station to the EEPROM
+ */
+void saveCurrentStation() {
+  int groupId = currentGroup->getIndex();
+  int stationId = currentStation->getIndex();
+
+  Serial.print("Saving group and station to EEPROM: ");
+  Serial.print(groupId);
+  Serial.print(",");
+  Serial.println(stationId);
+
+  EEPROM.write(EEPROM_GROUP_ADDR, groupId);
+  EEPROM.write(EEPROM_STATION_ADDR, stationId);
+
+  EEPROM.commit();
+
 }
 
 /*
