@@ -1,41 +1,22 @@
 /*
-  Blink
+ * Ocillates the signals on a set of pins.
+ */
 
-  Turns an LED on for one second, then off for one second, repeatedly.
-
-  Most Arduinos have an on-board LED you can control. On the UNO, MEGA and ZERO
-  it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
-  the correct LED pin independent of which board is used.
-  If you want to know what pin the on-board LED is connected to on your Arduino
-  model, check the Technical Specs of your board at:
-  https://www.arduino.cc/en/Main/Products
-
-  modified 8 May 2014
-  by Scott Fitzgerald
-  modified 2 Sep 2016
-  by Arturo Guadalupi
-  modified 8 Sep 2016
-  by Colby Newman
-
-  This example code is in the public domain.
-
-  http://www.arduino.cc/en/Tutorial/Blink
-*/
+ const int DELAY = 100;
 
 
-//const int LED_PIN = 25;
-const int LED_PIN = 14;
+// LED Pins
+//const int rs = 12, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //DIFFERS FROM PCB DESIGN!
 
-const int rs = 12, en = 2, d4 = 4, d5 = 17, d6 = 15, d7 = 5;  //DIFFERS FROM PCB DESIGN!
-int pins[] = {rs, en, d4, d5 , d6, d7}; 
+//VS1053 Pins
+const int xcs = 25, dreq = 26, xdcs = 27, si = 23, so = 19, sck = 18, xrst = 33;
+int pins[] = {xcs, dreq, xdcs, si, so, sck, xrst, -1}; // Terminated with a negative number
 
 
-// the setup function runs once when you press reset or power the board
 void setup() {
-  // initialize digital pin LED_BUILTIN as an output.
-  //pinMode(LED_PIN, OUTPUT);
+  
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; pins[i] > 0 ; i++) {
     pinMode(pins[i], OUTPUT);
   }
 
@@ -44,21 +25,19 @@ void setup() {
  
 }
 
-// the loop function runs over and over again forever
 void loop() {
-  Serial.println("Blink");
-  //digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  for (int i = 0; i < 6; i++) {
+  Serial.println("BlinkTest");
+  
+  for (int i = 0; pins[i] > 0; i++) {
     digitalWrite(pins[i], HIGH);   
   }
   
-  delay(100);                       // wait for a second
-  //digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
-  for (int i = 0; i < 6; i++) {
+  delay(DELAY);    
+                     
+  for (int i = 0; pins[i] > 0; i++) {
     digitalWrite(pins[i], LOW);   
   }
  
-  delay(100);                       // wait for a second
-
+  delay(DELAY);                      
 
 }
