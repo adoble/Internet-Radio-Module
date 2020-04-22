@@ -119,17 +119,6 @@ Text Label 8600 3250 0    50   ~ 0
 LED+
 Text Label 8600 3350 0    50   ~ 0
 LED-
-$Comp
-L modular-internet-radio:SW_Push SW?
-U 1 1 5E7FA73C
-P 10400 4300
-F 0 "SW?" V 10354 4448 50  0000 L CNN
-F 1 "SW_Push" V 10445 4448 50  0000 L CNN
-F 2 "" H 10400 4500 50  0001 C CNN
-F 3 "" H 10400 4500 50  0001 C CNN
-	1    10400 4300
-	0    1    1    0   
-$EndComp
 Text Label 7700 2050 0    50   ~ 0
 +5V
 Text Label 7700 2150 0    50   ~ 0
@@ -151,24 +140,11 @@ CONTROL
 Text Label 7700 2950 0    50   ~ 0
 GND
 Wire Wire Line
-	8100 2850 8100 4100
-Wire Wire Line
-	8100 4100 10400 4100
-Wire Wire Line
 	7600 2850 8100 2850
-Wire Wire Line
-	10400 4500 7900 4500
-Wire Wire Line
-	7900 4500 7900 2950
-Wire Wire Line
-	7600 2950 7900 2950
 Wire Wire Line
 	8200 2950 8200 1850
 Wire Wire Line
 	8200 1850 9250 1850
-Wire Wire Line
-	7900 2950 8200 2950
-Connection ~ 7900 2950
 Wire Wire Line
 	8300 2050 8300 1950
 Wire Wire Line
@@ -482,4 +458,123 @@ Wire Wire Line
 	5700 6100 5700 6700
 Wire Wire Line
 	7100 6100 7100 1700
+$Comp
+L modular-internet-radio:SW_Push SW?
+U 1 1 5EA0B41B
+P 9600 900
+F 0 "SW?" V 9554 1048 50  0000 L CNN
+F 1 "SW_Push" V 9645 1048 50  0000 L CNN
+F 2 "" H 9600 1100 50  0001 C CNN
+F 3 "" H 9600 1100 50  0001 C CNN
+	1    9600 900 
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3950 2000 3950 700 
+Wire Wire Line
+	3950 700  9600 700 
+Wire Wire Line
+	9600 1100 8200 1100
+Wire Wire Line
+	8200 1100 8200 1850
+Connection ~ 8200 1850
+$Comp
+L modular-internet-radio:Screw_Terminal_1x02 J?
+U 1 1 5EA12FAA
+P 1700 1700
+F 0 "J?" H 1620 1654 50  0000 R CNN
+F 1 "Screw_Terminal_1x02" H 1620 1745 50  0000 R CNN
+F 2 "" H 1700 1475 50  0001 C CNN
+F 3 "" H 1675 1700 50  0001 C CNN
+	1    1700 1700
+	-1   0    0    1   
+$EndComp
+$Comp
+L modular-internet-radio:Jack-DC J?
+U 1 1 5EA1F24F
+P 1000 2850
+F 0 "J?" H 771 2808 50  0000 R CNN
+F 1 "Jack-DC" H 771 2899 50  0000 R CNN
+F 2 "" H 1050 2810 50  0001 C CNN
+F 3 "~" H 1050 2810 50  0001 C CNN
+	1    1000 2850
+	1    0    0    1   
+$EndComp
+Wire Wire Line
+	1300 2750 1300 1850
+Wire Wire Line
+	1300 1600 1500 1600
+$Comp
+L modular-internet-radio:GND #PWR?
+U 1 1 5EA2E22E
+P 1300 1850
+F 0 "#PWR?" H 1300 1600 50  0001 C CNN
+F 1 "GND" V 1305 1722 50  0000 R CNN
+F 2 "" H 1300 1850 50  0000 C CNN
+F 3 "" H 1300 1850 50  0000 C CNN
+	1    1300 1850
+	0    1    1    0   
+$EndComp
+Connection ~ 1300 1850
+Wire Wire Line
+	1300 1850 1300 1600
+$Comp
+L modular-internet-radio:SW_SPST SW?
+U 1 1 5EA3ADFF
+P 9550 4650
+F 0 "SW?" V 9504 4748 50  0000 L CNN
+F 1 "SW_SPST" V 9595 4748 50  0000 L CNN
+F 2 "" H 9550 4650 50  0001 C CNN
+F 3 "~" H 9550 4650 50  0001 C CNN
+	1    9550 4650
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	7600 2950 8200 2950
+Wire Wire Line
+	1300 2950 1300 7450
+Wire Wire Line
+	1300 7450 6750 7450
+Wire Wire Line
+	6750 7450 6750 6400
+Wire Wire Line
+	6750 6400 9050 6400
+Wire Wire Line
+	9050 6400 9050 4850
+Wire Wire Line
+	9050 4850 9550 4850
+Wire Wire Line
+	9550 4450 8750 4450
+Wire Wire Line
+	8750 4450 8750 6250
+Wire Wire Line
+	8750 6250 6600 6250
+Wire Wire Line
+	6600 6250 6600 7250
+Wire Wire Line
+	6600 7250 1400 7250
+Wire Wire Line
+	1400 7250 1400 1800
+Wire Wire Line
+	1400 1800 1500 1800
+Text Notes 10250 950  0    50   ~ 0
+STATION \nSELECT
+Wire Notes Line
+	9350 600  9350 1200
+Wire Notes Line
+	9350 1200 10600 1200
+Wire Notes Line
+	10600 1200 10600 600 
+Wire Notes Line
+	10600 600  9350 600 
+Text Notes 10200 4700 0    50   ~ 0
+POWER
+Wire Notes Line
+	9250 5100 10700 5100
+Wire Notes Line
+	10700 5100 10700 4200
+Wire Notes Line
+	10700 4200 9250 4200
+Wire Notes Line
+	9250 4200 9250 5100
 $EndSCHEMATC

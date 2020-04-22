@@ -18,6 +18,12 @@ $CMP AVDD
 K POWER, PWR
 $ENDCMP
 #
+$CMP Barrel_Jack
+D DC Barrel Jack
+K DC power barrel jack connector
+F ~
+$ENDCMP
+#
 $CMP C
 D Unpolarized capacitor
 K cap capacitor
@@ -92,6 +98,12 @@ $CMP GND
 K POWER, PWR
 $ENDCMP
 #
+$CMP Jack-DC
+D DC Barrel Jack
+K DC power barrel jack connector
+F ~
+$ENDCMP
+#
 $CMP LCD16x2
 D Adafruit LCD 16x2 Alphanumeric 16pin Blue, 8bit parallel, 5V VDD
 K display LCD 7-segment
@@ -101,6 +113,12 @@ $ENDCMP
 $CMP R
 D Resistor
 K r res resistor
+$ENDCMP
+#
+$CMP SW_SPST
+D Single Pole Single Throw (SPST) switch
+K switch lever
+F ~
 $ENDCMP
 #
 $CMP Screw_Terminal_1x02
