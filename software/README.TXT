@@ -1,20 +1,13 @@
-Achtung! Dieser FTP-Dienst ist deaktiviert und wurde durch sFTP ersetzt. 
+# Internet Radio Module
 
-Mehr Sicherheit: 
+This directory contains the software/firmware for the internet radio module:
 
-sFTP sorgt für eine sichere Datenübertragung. Daher ersetzen Sie die FTP
-Serveradresse „stammadresse.homepage.t-online.de“ durch die sFTP Adresse
-„hosting.telekom.de". Wechseln Sie auf den Port 22. Ihre Zugangsdaten bleiben
-gleich.
+* **./Internet-Radio-Module**. Contains the main sketch for the internet radio Module
+plus some C++ code for the data structure used to hold the staions and their
+groups.
 
-Bei Fragen stehen Ihnen unsere Kollegen unter 0800 5 25 20 33 zur
-Verfügung.
+* **./libraries**. Contains the libraries used. Note that these are copies of
+standard libraries **and** custom libraries for this project
 
----
-Attention! This FTP-Server was replaced by sFTP. 
-
-Security enhancement:
-sFTP ensures secure data transmission. Please choose "hosting.telekom.de" and
-port 22 as new upload address! Your credentials didn't change.
-
-Feel free to call +49 800 5 25 20 33 if you need further assistence.
+* **./test**. A set of sketches used to test the internet radio module
+as it was being constructed.
