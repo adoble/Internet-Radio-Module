@@ -41,9 +41,11 @@
 #include "Groups.h"
 #include "credentials.h"
 
-const char programName[] = "Internet-Radio-Module 16.04.2020";
+const char programName[] = "Internet-Radio-Module 30.04.2020";
 
 const char stationFile[] = "http://www.andrew-doble.homepage.t-online.de/ir/stations.txt";
+
+const int VOLUME = 10; // Volume for both channels. Lower is louder.
 
 
 // Pin setup for the VS1053
@@ -260,7 +262,7 @@ void setup() {
 
   // Set the volume
   while (!player.readyForData()) {}
-  player.setVolume(40,40);  // Higher is quieter.
+  player.setVolume(VOLUME,VOLUME);  
 
   // Connect to the WIFI access point
   Serial.println("Attempting to connect to WIFI AP");
