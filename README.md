@@ -6,4 +6,4 @@ The current version does not output I2S, but instead a normal stereo audio signa
 
 ## System Diagram
 
-![System Diagram]()
+![System Diagram](docs/img/Modular-Internet-Radio_System_Diagramm.png)
